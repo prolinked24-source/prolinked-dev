@@ -1,0 +1,8 @@
+backend/vendor/
+backend/storage/
+frontend/.next/
+frontend/node_modules/
+backend/vendor/
+backend/storage/
+frontend/.next/
+frontend/node_modules/
