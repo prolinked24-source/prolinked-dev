@@ -46,6 +46,19 @@ interface EmployerApplication {
   candidate_profile?: CandidateProfile;
 }
 
+const inputClass =
+  "w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm " +
+  "text-slate-900 placeholder-slate-500 " +
+  "focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]";
+
+const primaryButtonClass =
+  "px-4 py-2 text-sm rounded-lg bg-sky-800 text-white font-medium " +
+  "hover:bg-sky-900 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#5BE1E6]";
+
+const secondaryButtonClass =
+  "px-3 py-1 text-xs rounded-lg bg-emerald-600 text-white " +
+  "hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6]";
+
 export default function EmployerDashboardPage() {
   const router = useRouter();
 
@@ -272,7 +285,6 @@ export default function EmployerDashboardPage() {
     }
   };
 
-  // einfache Loading-Anzeige
   if (loading) {
     return <div className="p-6">Lade Benutzerdaten...</div>;
   }
@@ -298,11 +310,17 @@ export default function EmployerDashboardPage() {
       <div className="min-h-screen bg-slate-50">
         <header className="bg-sky-900 text-sky-50 shadow">
           <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-3">
-            <div className="flex items-center gap-2">
-              <span className="font-bold tracking-wide">PROLINKED</span>
-              <span className="text-[11px] uppercase opacity-70">
-                Employer
-              </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold tracking-wide">PROLINKED</span>
+                <span className="text-[11px] uppercase opacity-70">
+                  Employer
+                </span>
+              </div>
+              <div
+                className="mt-1 h-0.5 w-16 rounded-full"
+                style={{ backgroundColor: "#5BE1E6" }}
+              />
             </div>
             <button
               onClick={handleLogout}
@@ -336,11 +354,17 @@ export default function EmployerDashboardPage() {
     <div className="min-h-screen bg-slate-50">
       <header className="bg-sky-900 text-sky-50 shadow">
         <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-2">
-            <span className="font-bold tracking-wide">PROLINKED</span>
-            <span className="text-[11px] uppercase opacity-70">
-              Employer
-            </span>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold tracking-wide">PROLINKED</span>
+              <span className="text-[11px] uppercase opacity-70">
+                Employer
+              </span>
+            </div>
+            <div
+              className="mt-1 h-0.5 w-16 rounded-full"
+              style={{ backgroundColor: "#5BE1E6" }}
+            />
           </div>
           <nav className="flex items-center gap-3 text-sm">
             <button
@@ -362,7 +386,7 @@ export default function EmployerDashboardPage() {
       <main className="p-6 max-w-5xl mx-auto space-y-6">
         {/* KPI-Section */}
         <section className="grid gap-4 md:grid-cols-3">
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
             <p className="text-xs uppercase tracking-wide text-slate-500">
               Jobs gesamt
             </p>
@@ -371,7 +395,7 @@ export default function EmployerDashboardPage() {
             </p>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
             <p className="text-xs uppercase tracking-wide text-slate-500">
               Aktive Jobs
             </p>
@@ -380,7 +404,7 @@ export default function EmployerDashboardPage() {
             </p>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
             <p className="text-xs uppercase tracking-wide text-slate-500">
               Bewerbungen (ausgewählter Job)
             </p>
@@ -391,8 +415,10 @@ export default function EmployerDashboardPage() {
         </section>
 
         {/* Profil-Section */}
-        <section className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-lg font-semibold mb-2">Unternehmensprofil</h2>
+        <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+          <h2 className="text-lg font-semibold mb-2 text-slate-900">
+            Unternehmensprofil
+          </h2>
           <p className="text-sm text-slate-700">
             Firma: {profile.company_name || user?.name || "–"}
           </p>
@@ -405,8 +431,10 @@ export default function EmployerDashboardPage() {
         </section>
 
         {/* Job erstellen */}
-        <section className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-lg font-semibold mb-3">Neuen Job erstellen</h2>
+        <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+          <h2 className="text-lg font-semibold mb-3 text-slate-900">
+            Neuen Job erstellen
+          </h2>
 
           {createMessage && (
             <p className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-3 py-2 mb-2">
@@ -426,7 +454,7 @@ export default function EmployerDashboardPage() {
               </label>
               <input
                 type="text"
-                className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
+                className={inputClass}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
@@ -439,7 +467,7 @@ export default function EmployerDashboardPage() {
                 </label>
                 <input
                   type="text"
-                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
+                  className={inputClass}
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                 />
@@ -450,7 +478,7 @@ export default function EmployerDashboardPage() {
                 </label>
                 <input
                   type="text"
-                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
+                  className={inputClass}
                   value={employmentType}
                   onChange={(e) => setEmploymentType(e.target.value)}
                   placeholder="z.B. Vollzeit, Teilzeit"
@@ -463,7 +491,10 @@ export default function EmployerDashboardPage() {
                 Beschreibung *
               </label>
               <textarea
-                className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50 min-h-[120px]"
+                className={
+                  inputClass +
+                  " min-h-[120px] resize-y"
+                }
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
@@ -472,7 +503,7 @@ export default function EmployerDashboardPage() {
             <button
               type="submit"
               disabled={creatingJob}
-              className="px-4 py-2 text-sm rounded bg-sky-700 text-white hover:bg-sky-800 disabled:opacity-50 transition"
+              className={primaryButtonClass}
             >
               {creatingJob ? "Job wird erstellt..." : "Job erstellen"}
             </button>
@@ -480,8 +511,10 @@ export default function EmployerDashboardPage() {
         </section>
 
         {/* Jobliste + Bewerbungen */}
-        <section className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-lg font-semibold mb-3">Meine Jobs</h2>
+        <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+          <h2 className="text-lg font-semibold mb-3 text-slate-900">
+            Meine Jobs
+          </h2>
 
           {jobsError && (
             <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2 mb-2">
@@ -499,13 +532,12 @@ export default function EmployerDashboardPage() {
             </p>
           )}
 
-          <ul className="divide-y divid
-e-slate-200">
+          <ul className="divide-y divide-slate-200">
             {jobs.map((job) => (
               <li key={job.id} className="py-2 text-sm">
                 <div className="flex justify-between items-start gap-4">
                   <div>
-                    <div className="font-medium text-sm md:text-base">
+                    <div className="font-medium text-sm md:text-base text-slate-900">
                       {job.title}
                     </div>
                     <div className="text-slate-600 text-xs md:text-sm">
@@ -520,7 +552,7 @@ e-slate-200">
                   <div className="shrink-0 flex flex-col gap-2">
                     <button
                       onClick={() => handleViewApplications(job.id)}
-                      className="px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 text-xs"
+                      className={secondaryButtonClass}
                     >
                       Bewerbungen ansehen
                     </button>
@@ -530,8 +562,8 @@ e-slate-200">
             ))}
           </ul>
 
-          <div className="mt-4 border-t pt-4">
-            <h3 className="text-md font-semibold mb-2">
+          <div className="mt-4 border-t border-slate-200 pt-4">
+            <h3 className="text-md font-semibold mb-2 text-slate-900">
               Bewerbungen für Job{" "}
               {selectedJobId ? `#${selectedJobId}` : "(Job auswählen)"}
             </h3>
@@ -557,7 +589,7 @@ e-slate-200">
             <ul className="divide-y divide-slate-200">
               {jobApplications.map((app) => (
                 <li key={app.id} className="py-2 text-sm">
-                  <div className="font-medium">
+                  <div className="font-medium text-slate-900">
                     {app.candidate_profile?.first_name}{" "}
                     {app.candidate_profile?.last_name}
                   </div>
