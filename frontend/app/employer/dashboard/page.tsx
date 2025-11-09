@@ -388,7 +388,7 @@ export default function EmployerDashboardPage() {
                   {job.location || "Ort n/a"} –{" "}
                   {job.employment_type || "Typ n/a"}
                 </div>
-                <div className="text-slate-500">
+                <div className="text-slate-600">
                   Aktiv: {job.is_active ? "Ja" : "Nein"} –{" "}
                   Erstellt am: {new Date(job.created_at).toLocaleString()}
                 </div>
@@ -405,7 +405,7 @@ export default function EmployerDashboardPage() {
             {job.location || "Ort n/a"} –{" "}
             {job.employment_type || "Typ n/a"}
           </div>
-          <div className="text-slate-500">
+          <div className="text-slate-600">
             Aktiv: {job.is_active ? "Ja" : "Nein"} – Erstellt am:{" "}
             {new Date(job.created_at).toLocaleString()}
           </div>
@@ -447,7 +447,7 @@ export default function EmployerDashboardPage() {
           {app.candidate_profile?.country_of_origin || "–"} – Zielland:{" "}
           {app.candidate_profile?.target_country || "–"}
         </div>
-        <div className="text-slate-500">
+        <div className="text-slate-600">
           Status: {app.status} – Erstellt am:{" "}
           {new Date(app.created_at).toLocaleString()}
         </div>
