@@ -6,3 +6,9 @@ backend/vendor/
 backend/storage/
 frontend/.next/
 frontend/node_modules/
+# Ignore sensitive environment files
+backend/.env
+frontend/.env.local
+# Optional: system caches, logs
+backend/storage/logs/
+backend/bootstrap/cache/
