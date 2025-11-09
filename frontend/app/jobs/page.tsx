@@ -14,6 +14,22 @@ interface Job {
   language_requirement?: string;
 }
 
+const inputClass =
+  "w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm " +
+  "text-slate-900 placeholder-slate-500 " +
+  "focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]";
+
+const filterButtonClass =
+  "w-full md:w-auto rounded-lg bg-sky-800 text-white text-sm font-medium px-4 py-2 " +
+  "hover:bg-sky-900 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#5BE1E6] transition";
+
+const applyButtonClass =
+  "px-3 py-1 rounded-lg bg-emerald-600 text-white text-xs font-medium " +
+  "hover:bg-emerald-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6]";
+
+const backButtonClass =
+  "px-2 py-1 rounded hover:bg-sky-800 text-sm";
+
 export default function JobsPage() {
   const router = useRouter();
 
@@ -140,7 +156,6 @@ export default function JobsPage() {
   };
 
   const handleBackToDashboard = () => {
-    // Für Kandidaten sinnvoll – später ggf. rollenspezifisch erweitern
     router.push("/candidate/dashboard");
   };
 
@@ -148,22 +163,28 @@ export default function JobsPage() {
     <div className="min-h-screen bg-slate-50">
       <header className="bg-sky-900 text-sky-50 shadow">
         <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-2">
-            <span className="font-bold tracking-wide">PROLINKED</span>
-            <span className="text-[11px] uppercase opacity-70">
-              Jobs
-            </span>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold tracking-wide">PROLINKED</span>
+              <span className="text-[11px] uppercase opacity-70">
+                Jobs
+              </span>
+            </div>
+            <div
+              className="mt-1 h-0.5 w-16 rounded-full"
+              style={{ backgroundColor: "#5BE1E6" }}
+            />
           </div>
           <nav className="flex items-center gap-3 text-sm">
             <button
               onClick={handleBackToDashboard}
-              className="px-2 py-1 rounded hover:bg-sky-800"
+              className={backButtonClass}
             >
               Dashboard
             </button>
             <button
               onClick={() => router.push("/jobs")}
-              className="px-2 py-1 rounded bg-sky-800"
+              className="px-2 py-1 rounded bg-sky-800 text-sm"
             >
               Jobs
             </button>
@@ -173,8 +194,10 @@ export default function JobsPage() {
 
       <main className="p-6 max-w-5xl mx-auto space-y-6">
         {/* Filter-Section */}
-        <section className="bg-white rounded-lg shadow p-4">
-          <h1 className="text-lg font-semibold mb-3">Jobs suchen</h1>
+        <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+          <h1 className="text-lg font-semibold mb-3 text-slate-900">
+            Jobs suchen
+          </h1>
           <form
             onSubmit={handleFilterSubmit}
             className="grid gap-3 md:grid-cols-[2fr,2fr,auto]"
@@ -185,7 +208,7 @@ export default function JobsPage() {
               </label>
               <input
                 type="text"
-                className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
+                className={inputClass}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="z. B. Pflegekraft, IT, Bau..."
@@ -198,7 +221,7 @@ export default function JobsPage() {
               </label>
               <input
                 type="text"
-                className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
+                className={inputClass}
                 value={locationFilter}
                 onChange={(e) => setLocationFilter(e.target.value)}
                 placeholder="z. B. Berlin, München..."
@@ -208,7 +231,7 @@ export default function JobsPage() {
             <div className="flex items-end">
               <button
                 type="submit"
-                className="w-full md:w-auto px-4 py-2 text-sm rounded bg-sky-700 text-white hover:bg-sky-800 transition"
+                className={filterButtonClass}
               >
                 Filtern
               </button>
@@ -217,8 +240,8 @@ export default function JobsPage() {
         </section>
 
         {/* Jobliste */}
-        <section className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-lg font-semibold mb-3">
+        <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+          <h2 className="text-lg font-semibold mb-3 text-slate-900">
             Verfügbare Jobs
           </h2>
 
@@ -254,7 +277,7 @@ export default function JobsPage() {
               <li key={job.id} className="py-3 text-sm">
                 <div className="flex flex-col gap-1 md:flex-row md:items-start md:justify-between">
                   <div>
-                    <div className="font-medium text-sm md:text-base">
+                    <div className="font-medium text-sm md:text-base text-slate-900">
                       {job.title}
                     </div>
                     <div className="text-slate-600 text-xs md:text-sm">
@@ -275,7 +298,7 @@ export default function JobsPage() {
                     <button
                       onClick={() => handleApply(job.id)}
                       disabled={loadingApply === job.id}
-                      className="px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 text-xs"
+                      className={applyButtonClass}
                     >
                       {loadingApply === job.id
                         ? "Bewerbung läuft..."
