@@ -267,7 +267,20 @@ export default function CandidateDashboardPage() {
   }
 
   const profile = user.candidate_profile || {};
+  
+  const totalApplications = applications.length;
 
+const lastApplicationDate = totalApplications
+  ? new Date(
+      Math.max(
+        ...applications.map((a) =>
+          new Date(a.created_at).getTime()
+        )
+      )
+    )
+  : null;
+
+  
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-sky-900 text-sky-50 shadow">
