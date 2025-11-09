@@ -5,10 +5,19 @@ import { useRouter } from "next/navigation";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
 
+const inputClass =
+  "w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm " +
+  "text-slate-900 placeholder-slate-500 " +
+  "focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]";
+
+const primaryButtonClass =
+  "w-full rounded-lg bg-sky-800 text-white text-sm font-medium px-3 py-2 " +
+  "hover:bg-sky-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5BE1E6] " +
+  "disabled:opacity-50 transition";
+
 export default function LoginPage() {
   const router = useRouter();
 
-  // Zum Testen kannst du hier Default-Werte setzen oder leer lassen:
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -79,8 +88,13 @@ export default function LoginPage() {
             <p className="text-[11px] uppercase tracking-wide text-slate-500">
               Talent & Employer Portal
             </p>
+            <div
+              className="mt-2 h-0.5 w-16 rounded-full"
+              style={{ backgroundColor: "#5BE1E6" }}
+            />
           </div>
-          <span className="text-[11px] px-2 py-1 rounded-full bg-sky-100 text-sky-800 font-medium">
+          <span className="text-[11px] px-2 py-1 rounded-full bg-sky-900 text-sky-50 border"
+                style={{ borderColor: "#5BE1E6" }}>
             Login
           </span>
         </div>
@@ -107,7 +121,7 @@ export default function LoginPage() {
             </label>
             <input
               type="email"
-              className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
+              className={inputClass}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
@@ -121,7 +135,7 @@ export default function LoginPage() {
             </label>
             <input
               type="password"
-              className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
+              className={inputClass}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
@@ -132,7 +146,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-sky-700 hover:bg-sky-800 text-white font-medium rounded-lg px-3 py-2 text-sm disabled:opacity-50 transition"
+            className={primaryButtonClass}
           >
             {loading ? "Bitte warten..." : "Einloggen"}
           </button>
@@ -144,14 +158,14 @@ export default function LoginPage() {
           <div className="flex items-center justify-center gap-3 text-xs">
             <button
               onClick={() => router.push("/register-candidate")}
-              className="text-sky-700 hover:underline font-medium"
+              className="text-sky-800 hover:underline font-medium"
             >
               Kandidat registrieren
             </button>
             <span className="text-slate-400">|</span>
             <button
               onClick={() => router.push("/register-employer")}
-              className="text-sky-700 hover:underline font-medium"
+              className="text-sky-800 hover:underline font-medium"
             >
               Arbeitgeber registrieren
             </button>
