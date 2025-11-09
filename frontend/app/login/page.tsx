@@ -8,9 +8,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
 export default function LoginPage() {
   const router = useRouter();
 
-  // Default auf Candidate-Login, damit du schnell testen kannst
-  const [email, setEmail] = useState("candidate1@example.com");
-  const [password, setPassword] = useState("secret1234");
+  // Zum Testen kannst du hier Default-Werte setzen oder leer lassen:
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -48,7 +48,6 @@ export default function LoginPage() {
         localStorage.setItem("prolinked_role", data.user.role);
       }
 
-      // Rolle im Frontend sicher auswerten
       const role = (data.user.role || "").toLowerCase().trim();
 
       if (role === "employer") {
@@ -67,13 +66,32 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <div className="w-full max-w-md bg-white/95 rounded-2xl shadow-xl p-8">
-        <h1 className="text-2xl font-semibold mb-1 text-center text-sky-900">
-          PROLINKED Login
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
+      <div className="w-full max-w-lg bg-white/95 rounded-2xl shadow-xl p-8">
+        {/* Brand / Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-bold tracking-wide text-sky-900">
+                PROLINKED
+              </span>
+            </div>
+            <p className="text-[11px] uppercase tracking-wide text-slate-500">
+              Talent & Employer Portal
+            </p>
+          </div>
+          <span className="text-[11px] px-2 py-1 rounded-full bg-sky-100 text-sky-800 font-medium">
+            Login
+          </span>
+        </div>
+
+        <h1 className="text-lg font-semibold mb-1 text-slate-900">
+          Willkommen zurück
         </h1>
-        <p className="text-xs text-center mb-6 text-slate-600">
-          Melde dich mit deinem Kandidaten- oder Arbeitgeber-Account an.
+        <p className="text-xs mb-4 text-slate-600">
+          Melde dich als <span className="font-semibold">Kandidat</span> oder{" "}
+          <span className="font-semibold">Arbeitgeber</span> mit deiner E-Mail
+          und deinem Passwort an.
         </p>
 
         {error && (
@@ -82,7 +100,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div>
             <label className="block text-sm font-medium mb-1 text-slate-800">
               E-Mail
@@ -93,6 +111,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
+              placeholder="z. B. candidate1@example.com"
             />
           </div>
 
@@ -106,6 +125,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
+              placeholder="••••••••"
             />
           </div>
 
@@ -118,28 +138,24 @@ export default function LoginPage() {
           </button>
         </form>
 
+        {/* Register Links */}
         <div className="mt-6 text-[11px] text-slate-500 text-center space-y-2">
-  <p>Du hast noch keinen Account?</p>
-  <div className="flex items-center justify-center gap-3 text-xs">
-    <button
-      onClick={() => router.push("/register-candidate")}
-      className="text-sky-700 hover:underline font-medium"
-    >
-      Kandidat registrieren
-    </button>
-    <span className="text-slate-400">|</span>
-    <button
-      onClick={() => router.push("/register-employer")}
-      className="text-sky-700 hover:underline font-medium"
-    >
-      Arbeitgeber registrieren
-    </button>
-  </div>
-</div>
-
-        <div className="mt-5 text-[11px] text-slate-500 space-y-1 text-center">
-          <p>Test Candidate: candidate1@example.com / secret1234</p>
-          <p>Test Employer: employer1@example.com / secret1234</p>
+          <p>Du hast noch keinen Account?</p>
+          <div className="flex items-center justify-center gap-3 text-xs">
+            <button
+              onClick={() => router.push("/register-candidate")}
+              className="text-sky-700 hover:underline font-medium"
+            >
+              Kandidat registrieren
+            </button>
+            <span className="text-slate-400">|</span>
+            <button
+              onClick={() => router.push("/register-employer")}
+              className="text-sky-700 hover:underline font-medium"
+            >
+              Arbeitgeber registrieren
+            </button>
+          </div>
         </div>
       </div>
     </div>
