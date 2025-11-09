@@ -63,6 +63,9 @@ export default function CandidateDashboardPage() {
   const [cvMessage, setCvMessage] = useState<string | null>(null);
   const [cvError, setCvError] = useState<string | null>(null);
 
+  // simple „Status“-Flag für Stepper – wird nach erfolgreichem Upload gesetzt
+  const [hasUploadedCv, setHasUploadedCv] = useState(false);
+
   // Benutzer & Bewerbungen laden
   useEffect(() => {
     const token =
@@ -197,6 +200,7 @@ export default function CandidateDashboardPage() {
       console.log("CV upload response:", data);
       setCvMessage("CV erfolgreich hochgeladen.");
       setCvFile(null);
+      setHasUploadedCv(true);
     } catch (err: any) {
       console.error(err);
       setCvError(err.message || "Fehler beim Upload der CV.");
@@ -266,6 +270,20 @@ export default function CandidateDashboardPage() {
   }
 
   const profile = user.candidate_profile || {};
+  const profileComplete = Boolean(
+    (profile.first_name && profile.first_name.trim() !== "") ||
+      (profile.last_name && profile.last_name.trim() !== "")
+  );
+
+  // Stepper-Klassen
+  const stepBase =
+    "flex-1 rounded-lg border px-3 py-2 flex items-center gap-2 text-xs md:text-sm";
+  const stepDone = "border-emerald-400 bg-emerald-50 text-emerald-900";
+  const stepCurrent = "border-sky-400 bg-sky-50 text-sky-900";
+  const stepUpcoming = "border-slate-200 bg-slate-50 text-slate-600";
+
+  const circleBase =
+    "flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-semibold";
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -307,6 +325,130 @@ export default function CandidateDashboardPage() {
       </header>
 
       <main className="p-6 max-w-5xl mx-auto space-y-6">
+        {/* Stepper – Vermittlungsstatus */}
+        <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+          <h2 className="text-sm font-semibold mb-3 text-slate-900">
+            Mein Vermittlungsstatus
+          </h2>
+          <div className="flex flex-col md:flex-row md:items-stretch gap-3">
+            {/* Schritt 1: Profil */}
+            <div
+              className={
+                stepBase +
+                " " +
+                (profileComplete ? stepDone : stepCurrent)
+              }
+            >
+              <div
+                className={
+                  circleBase +
+                  " " +
+                  (profileComplete
+                    ? "bg-emerald-500 text-white"
+                    : "bg-sky-600 text-white")
+                }
+              >
+                1
+              </div>
+              <div>
+                <p className="font-semibold">Profil anlegen</p>
+                <p className="text-[11px] text-slate-600">
+                  Basisdaten (Name, Länder) hinterlegt.
+                </p>
+              </div>
+            </div>
+
+            {/* Schritt 2: CV */}
+            <div
+              className={
+                stepBase +
+                " " +
+                (profileComplete && hasUploadedCv
+                  ? stepDone
+                  : !profileComplete
+                  ? stepUpcoming
+                  : stepCurrent)
+              }
+            >
+              <div
+                className={
+                  circleBase +
+                  " " +
+                  (profileComplete && hasUploadedCv
+                    ? "bg-emerald-500 text-white"
+                    : profileComplete
+                    ? "bg-sky-600 text-white"
+                    : "bg-slate-300 text-slate-700")
+                }
+              >
+                2
+              </div>
+              <div>
+                <p className="font-semibold">CV hochladen</p>
+                <p className="text-[11px] text-slate-600">
+                  Lebenslauf als PDF/DOC hinterlegen.
+                </p>
+              </div>
+            </div>
+
+            {/* Schritt 3: Jobs */}
+            <div
+              className={
+                stepBase +
+                " " +
+                (profileComplete && hasUploadedCv
+                  ? stepCurrent
+                  : stepUpcoming)
+              }
+            >
+              <div
+                className={
+                  circleBase +
+                  " " +
+                  (profileComplete && hasUploadedCv
+                    ? "bg-sky-600 text-white"
+                    : "bg-slate-300 text-slate-700")
+                }
+              >
+                3
+              </div>
+              <div>
+                <p className="font-semibold">Jobs durchsuchen</p>
+                <p className="text-[11px] text-slate-600">
+                  Passende Stellen filtern & ansehen.
+                </p>
+              </div>
+            </div>
+
+            {/* Schritt 4: Bewerben */}
+            <div
+              className={
+                stepBase +
+                " " +
+                (applications.length > 0 ? stepDone : stepUpcoming)
+              }
+            >
+              <div
+                className={
+                  circleBase +
+                  " " +
+                  (applications.length > 0
+                    ? "bg-emerald-500 text-white"
+                    : "bg-slate-300 text-slate-700")
+                }
+              >
+                4
+              </div>
+              <div>
+                <p className="font-semibold">Bewerben</p>
+                <p className="text-[11px] text-slate-600">
+                  Bewerbungen abschicken & Status verfolgen.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Profil-Section */}
         <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
           <h2 className="text-lg font-semibold mb-2 text-slate-900">
