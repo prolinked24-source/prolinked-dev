@@ -84,13 +84,31 @@ export default function RegisterCandidatePage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
       <div className="w-full max-w-lg bg-white/95 rounded-2xl shadow-xl p-8">
-        <h1 className="text-2xl font-semibold mb-1 text-center text-sky-900">
-          Registrierung – Kandidat
+        {/* Brand / Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-bold tracking-wide text-sky-900">
+                PROLINKED
+              </span>
+            </div>
+            <p className="text-[11px] uppercase tracking-wide text-slate-500">
+              Talent & Employer Portal
+            </p>
+          </div>
+          <span className="text-[11px] px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 font-medium">
+            Candidate
+          </span>
+        </div>
+
+        <h1 className="text-lg font-semibold mb-1 text-slate-900">
+          Kandidaten-Account erstellen
         </h1>
-        <p className="text-xs text-center mb-6 text-slate-600">
-          Erstelle deinen PROLINKED-Kandidaten-Account und starte in den Bewerbungsprozess.
+        <p className="text-xs mb-4 text-slate-600">
+          Erstelle deinen persönlichen Kandidaten-Account, um Lebenslauf zu
+          hinterlegen und dich auf Jobs zu bewerben.
         </p>
 
         {error && (
@@ -104,7 +122,7 @@ export default function RegisterCandidatePage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="grid md:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1 text-slate-800">
@@ -219,7 +237,7 @@ export default function RegisterCandidatePage() {
           </button>
         </form>
 
-        <div className="mt-5 text-[11px] text-slate-500 text-center space-y-1">
+        <div className="mt-6 text-[11px] text-slate-500 text-center space-y-2">
           <p>Bereits ein Account?</p>
           <button
             onClick={gotoLogin}
