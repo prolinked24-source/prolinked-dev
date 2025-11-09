@@ -113,7 +113,7 @@ return (
         </button>
       </form>
 
-      <div className="mt-5 text-[11px] text-slate-500 space-y-1 text-center">
+      <div className="mt-5 text-[11px] text-slate-600 space-y-1 text-center">
         <p>Test Candidate: candidate1@example.com / secret1234</p>
         <p>Test Employer: employer1@example.com / secret1234</p>
       </div>
