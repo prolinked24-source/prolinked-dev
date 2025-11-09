@@ -54,6 +54,7 @@ export default function CandidateDashboardPage() {
   const [cvUploading, setCvUploading] = useState(false);
   const [cvMessage, setCvMessage] = useState<string | null>(null);
   const [cvError, setCvError] = useState<string | null>(null);
+  const [cvProgress, setCvProgress] = useState<number | null>(null);
 
   // Benutzer & Bewerbungen laden
   useEffect(() => {
@@ -136,7 +137,7 @@ export default function CandidateDashboardPage() {
     setCvFile(file);
   };
 
-  const handleCvUpload = async (e: FormEvent) => {
+  const handleCvUpload = (e: FormEvent) => {
     e.preventDefault();
     setCvError(null);
     setCvMessage(null);
@@ -157,43 +158,58 @@ export default function CandidateDashboardPage() {
       return;
     }
 
-    try {
-      setCvUploading(true);
+    setCvUploading(true);
+    setCvProgress(0);
 
-      const formData = new FormData();
-      formData.append("cv", cvFile);
+    const formData = new FormData();
+    formData.append("cv", cvFile);
 
-      const res = await fetch(`${API_BASE_URL}/candidate/cv`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-        body: formData,
-      });
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${API_BASE_URL}/candidate/cv`, true);
+    xhr.setRequestHeader("Accept", "application/json");
+    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
-      if (!res.ok) {
-        let body: any = null;
-        try {
-          body = await res.json();
-        } catch {
-          // ignore
-        }
-        const msg =
-          body?.message ||
-          `Upload fehlgeschlagen (${res.status.toString()})`;
-        throw new Error(msg);
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percent = Math.round((event.loaded / event.total) * 100);
+        setCvProgress(percent);
+      }
+    };
+
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState !== XMLHttpRequest.DONE) return;
+
+      setCvUploading(false);
+
+      let body: any = null;
+      try {
+        body = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+      } catch {
+        // ignore parse error
       }
 
-      const data = await res.json();
-      console.log("CV upload response:", data);
-      setCvMessage("CV erfolgreich hochgeladen.");
-    } catch (err: any) {
-      console.error(err);
-      setCvError(err.message || "Fehler beim Upload der CV.");
-    } finally {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        setCvMessage("CV erfolgreich hochgeladen.");
+        setCvError(null);
+      } else {
+        const msg =
+          body?.message ||
+          `Upload fehlgeschlagen (${xhr.status.toString()})`;
+        setCvError(msg);
+        setCvMessage(null);
+      }
+
+      setCvProgress(null);
+    };
+
+    xhr.onerror = () => {
       setCvUploading(false);
-    }
+      setCvError("Netzwerkfehler beim Upload der CV.");
+      setCvMessage(null);
+      setCvProgress(null);
+    };
+
+    xhr.send(formData);
   };
 
   if (loading) {
@@ -321,41 +337,56 @@ export default function CandidateDashboardPage() {
             </p>
           )}
 
+          {cvUploading && cvProgress !== null && (
+            <div className="mb-2">
+              <div className="w-full bg-slate-200 rounded h-2 overflow-hidden">
+                <div
+                  className="h-2 bg-sky-600 transition-all"
+                  style={{ width: `${cvProgress}%` }}
+                />
+              </div>
+              <p className="mt-1 text-xs text-slate-600">
+                Upload: {cvProgress}%
+              </p>
+            </div>
+          )}
+
           <form onSubmit={handleCvUpload} className="space-y-3">
-  <input
-    id="cvInput"
-    type="file"
-    accept=".pdf,.doc,.docx"
-    onChange={handleCvChange}
-    className="hidden"
-  />
+            <input
+              id="cvInput"
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={handleCvChange}
+              className="hidden"
+            />
 
-  <div className="flex items-center gap-3">
-    <button
-  type="button"
-  onClick={() => document.getElementById("cvInput")?.click()}
-  className="flex items-center gap-2 px-4 py-2 text-sm rounded bg-sky-700 text-white hover:bg-sky-800 transition">
-  <Upload className="w-4 h-4" />
-  {cvFile ? "Datei ändern" : "Datei auswählen"}
-</button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  document.getElementById("cvInput")?.click()
+                }
+                className="flex items-center gap-2 px-4 py-2 text-sm rounded bg-sky-700 text-white hover:bg-sky-800 transition"
+              >
+                <Upload className="w-4 h-4" />
+                {cvFile ? "Datei ändern" : "Datei auswählen"}
+              </button>
 
+              {cvFile && (
+                <span className="text-xs text-slate-700 truncate max-w-[180px]">
+                  {cvFile.name}
+                </span>
+              )}
+            </div>
 
-    {cvFile && (
-      <span className="text-xs text-slate-700 truncate max-w-[180px]">
-        {cvFile.name}
-      </span>
-    )}
-  </div>
-
-  <button
-    type="submit"
-    disabled={cvUploading || !cvFile}
-    className="px-4 py-2 text-sm rounded bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50 transition"
-  >
-    {cvUploading ? "Upload läuft..." : "CV hochladen"}
-  </button>
-</form>
-
+            <button
+              type="submit"
+              disabled(cvUploading || !cvFile)
+              className="px-4 py-2 text-sm rounded bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50 transition"
+            >
+              {cvUploading ? "Upload läuft..." : "CV hochladen"}
+            </button>
+          </form>
         </section>
 
         {/* Bewerbungen */}
