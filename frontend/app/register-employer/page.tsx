@@ -82,13 +82,31 @@ export default function RegisterEmployerPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
       <div className="w-full max-w-lg bg-white/95 rounded-2xl shadow-xl p-8">
-        <h1 className="text-2xl font-semibold mb-1 text-center text-sky-900">
-          Registrierung – Arbeitgeber
+        {/* Brand / Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-bold tracking-wide text-sky-900">
+                PROLINKED
+              </span>
+            </div>
+            <p className="text-[11px] uppercase tracking-wide text-slate-500">
+              Talent & Employer Portal
+            </p>
+          </div>
+          <span className="text-[11px] px-2 py-1 rounded-full bg-amber-100 text-amber-800 font-medium">
+            Employer
+          </span>
+        </div>
+
+        <h1 className="text-lg font-semibold mb-1 text-slate-900">
+          Arbeitgeber-Account erstellen
         </h1>
-        <p className="text-xs text-center mb-6 text-slate-600">
-          Erstelle einen Arbeitgeber-Account, um Jobs zu veröffentlichen und Bewerbungen zu verwalten.
+        <p className="text-xs mb-4 text-slate-600">
+          Erstelle einen Arbeitgeber-Account, um Stellenanzeigen zu veröffentlichen
+          und Bewerbungen zu verwalten.
         </p>
 
         {error && (
@@ -102,7 +120,7 @@ export default function RegisterEmployerPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div>
             <label className="block text-sm font-medium mb-1 text-slate-800">
               Firmenname *
@@ -190,7 +208,7 @@ export default function RegisterEmployerPage() {
           </button>
         </form>
 
-        <div className="mt-5 text-[11px] text-slate-500 text-center space-y-1">
+        <div className="mt-6 text-[11px] text-slate-500 text-center space-y-2">
           <p>Bereits ein Account?</p>
           <button
             onClick={gotoLogin}
