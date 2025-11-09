@@ -358,7 +358,7 @@ export default function EmployerDashboardPage() {
               <button
                 type="submit"
                 disabled={formSubmitting}
-                className="px-4 py-2 text-sm rounded bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-50"
+                className="px-4 py-2 text-sm rounded bg-sky-700 text-white hover:bg-sky-700 disabled:opacity-50"
               >
                 {formSubmitting ? "Job wird angelegt..." : "Job veröffentlichen"}
               </button>
@@ -375,7 +375,7 @@ export default function EmployerDashboardPage() {
           )}
 
           {!jobsLoading && jobs.length === 0 && (
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-700">
               Noch keine Jobs angelegt.
             </p>
           )}
@@ -384,11 +384,11 @@ export default function EmployerDashboardPage() {
             {jobs.map((job) => (
               <li key={job.id} className="py-2 text-sm">
                 <div className="font-medium">{job.title}</div>
-                <div className="text-slate-600">
+                <div className="text-slate-700">
                   {job.location || "Ort n/a"} –{" "}
                   {job.employment_type || "Typ n/a"}
                 </div>
-                <div className="text-slate-600">
+                <div className="text-slate-700">
                   Aktiv: {job.is_active ? "Ja" : "Nein"} –{" "}
                   Erstellt am: {new Date(job.created_at).toLocaleString()}
                 </div>
@@ -401,11 +401,11 @@ export default function EmployerDashboardPage() {
       <div className="flex justify-between items-start gap-4">
         <div>
           <div className="font-medium">{job.title}</div>
-          <div className="text-slate-600">
+          <div className="text-slate-700">
             {job.location || "Ort n/a"} –{" "}
             {job.employment_type || "Typ n/a"}
           </div>
-          <div className="text-slate-600">
+          <div className="text-slate-700">
             Aktiv: {job.is_active ? "Ja" : "Nein"} – Erstellt am:{" "}
             {new Date(job.created_at).toLocaleString()}
           </div>
@@ -413,7 +413,7 @@ export default function EmployerDashboardPage() {
         <div className="shrink-0 flex flex-col gap-2">
           <button
             onClick={() => handleViewApplications(job.id)}
-            className="px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 text-xs"
+            className="px-3 py-1 rounded bg-emerald-700 text-white hover:bg-emerald-700 text-xs"
           >
             Bewerbungen ansehen
               </button>
@@ -430,7 +430,7 @@ export default function EmployerDashboardPage() {
   )}
 
   {!appsLoading && selectedJobId && jobApplications.length === 0 && !appsError && (
-    <p className="text-sm text-slate-600">
+    <p className="text-sm text-slate-700">
       Für diesen Job liegen aktuell keine Bewerbungen vor.
     </p>
   )}
@@ -442,12 +442,12 @@ export default function EmployerDashboardPage() {
           {app.candidate_profile?.first_name}{" "}
           {app.candidate_profile?.last_name}
         </div>
-        <div className="text-slate-600">
+        <div className="text-slate-700">
           Herkunftsland:{" "}
           {app.candidate_profile?.country_of_origin || "–"} – Zielland:{" "}
           {app.candidate_profile?.target_country || "–"}
         </div>
-        <div className="text-slate-600">
+        <div className="text-slate-700">
           Status: {app.status} – Erstellt am:{" "}
           {new Date(app.created_at).toLocaleString()}
         </div>
