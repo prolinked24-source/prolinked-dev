@@ -50,6 +50,8 @@ export default function EmployerDashboardPage() {
   const router = useRouter();
 
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsError, setJobsError] = useState<string | null>(null);
@@ -104,6 +106,8 @@ export default function EmployerDashboardPage() {
       } catch (err: any) {
         console.error(err);
         setError(err.message || "Fehler beim Laden des Benutzers.");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -124,8 +128,6 @@ export default function EmployerDashboardPage() {
         }
 
         const data = await res.json();
-
-        // Wenn Backend Laravel-Pagination nutzt:
         const list = Array.isArray(data) ? data : data.data;
         setJobs(list || []);
       } catch (err: any) {
@@ -256,10 +258,8 @@ export default function EmployerDashboardPage() {
       const data = await res.json();
       setCreateMessage("Job erfolgreich erstellt.");
 
-      // Liste aktualisieren (Job anhängen)
       setJobs((prev) => [data, ...prev]);
 
-      // Formular leeren
       setTitle("");
       setLocation("");
       setEmploymentType("");
@@ -272,7 +272,13 @@ export default function EmployerDashboardPage() {
     }
   };
 
-  if (!user && !error && !loading && !jobsLoading) {
+  // einfache Loading-Anzeige
+  if (loading) {
+    return <div className="p-6">Lade Benutzerdaten...</div>;
+  }
+
+  // Fallback: kein User geladen
+  if (!user && !error) {
     return (
       <div className="p-6">
         <p className="mb-3">Kein Benutzer geladen. Bitte erneut einloggen.</p>
@@ -286,6 +292,7 @@ export default function EmployerDashboardPage() {
     );
   }
 
+  // Fehlerfall (z. B. falsche Rolle)
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50">
@@ -492,7 +499,8 @@ export default function EmployerDashboardPage() {
             </p>
           )}
 
-          <ul className="divide-y divide-slate-200">
+          <ul className="divide-y divid
+e-slate-200">
             {jobs.map((job) => (
               <li key={job.id} className="py-2 text-sm">
                 <div className="flex justify-between items-start gap-4">
