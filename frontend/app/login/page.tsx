@@ -118,6 +118,25 @@ export default function LoginPage() {
           </button>
         </form>
 
+        <div className="mt-6 text-[11px] text-slate-500 text-center space-y-2">
+  <p>Du hast noch keinen Account?</p>
+  <div className="flex items-center justify-center gap-3 text-xs">
+    <button
+      onClick={() => router.push("/register-candidate")}
+      className="text-sky-700 hover:underline font-medium"
+    >
+      Kandidat registrieren
+    </button>
+    <span className="text-slate-400">|</span>
+    <button
+      onClick={() => router.push("/register-employer")}
+      className="text-sky-700 hover:underline font-medium"
+    >
+      Arbeitgeber registrieren
+    </button>
+  </div>
+</div>
+
         <div className="mt-5 text-[11px] text-slate-500 space-y-1 text-center">
           <p>Test Candidate: candidate1@example.com / secret1234</p>
           <p>Test Employer: employer1@example.com / secret1234</p>
