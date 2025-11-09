@@ -5,6 +5,16 @@ import { useRouter } from "next/navigation";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
 
+const inputClass =
+  "w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm " +
+  "text-slate-900 placeholder-slate-500 " +
+  "focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]";
+
+const primaryButtonClass =
+  "w-full rounded-lg bg-sky-800 text-white text-sm font-medium px-3 py-2 " +
+  "hover:bg-sky-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5BE1E6] " +
+  "disabled:opacity-50 transition";
+
 export default function RegisterEmployerPage() {
   const router = useRouter();
 
@@ -95,8 +105,13 @@ export default function RegisterEmployerPage() {
             <p className="text-[11px] uppercase tracking-wide text-slate-500">
               Talent & Employer Portal
             </p>
+            <div
+              className="mt-2 h-0.5 w-20 rounded-full"
+              style={{ backgroundColor: "#5BE1E6" }}
+            />
           </div>
-          <span className="text-[11px] px-2 py-1 rounded-full bg-amber-100 text-amber-800 font-medium">
+          <span className="text-[11px] px-2 py-1 rounded-full bg-amber-50 text-amber-700 border"
+                style={{ borderColor: "#5BE1E6" }}>
             Employer
           </span>
         </div>
@@ -127,7 +142,7 @@ export default function RegisterEmployerPage() {
             </label>
             <input
               type="text"
-              className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              className={inputClass}
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
             />
@@ -139,7 +154,7 @@ export default function RegisterEmployerPage() {
             </label>
             <input
               type="text"
-              className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              className={inputClass}
               value={contactName}
               onChange={(e) => setContactName(e.target.value)}
               placeholder="z. B. HR Manager"
@@ -152,7 +167,7 @@ export default function RegisterEmployerPage() {
             </label>
             <input
               type="text"
-              className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              className={inputClass}
               value={country}
               onChange={(e) => setCountry(e.target.value)}
               placeholder="z. B. Deutschland"
@@ -165,7 +180,7 @@ export default function RegisterEmployerPage() {
             </label>
             <input
               type="email"
-              className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+              className={inputClass}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
@@ -179,7 +194,7 @@ export default function RegisterEmployerPage() {
               </label>
               <input
                 type="password"
-                className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                className={inputClass}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
@@ -191,7 +206,7 @@ export default function RegisterEmployerPage() {
               </label>
               <input
                 type="password"
-                className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                className={inputClass}
                 value={passwordConfirmation}
                 onChange={(e) => setPasswordConfirmation(e.target.value)}
                 autoComplete="new-password"
@@ -202,7 +217,7 @@ export default function RegisterEmployerPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-sky-700 hover:bg-sky-800 text-white font-medium rounded-lg px-3 py-2 text-sm disabled:opacity-50 transition"
+            className={primaryButtonClass}
           >
             {loading ? "Registrierung läuft..." : "Arbeitgeber registrieren"}
           </button>
@@ -212,7 +227,7 @@ export default function RegisterEmployerPage() {
           <p>Bereits ein Account?</p>
           <button
             onClick={gotoLogin}
-            className="text-sky-700 hover:underline font-medium"
+            className="text-sky-800 hover:underline font-medium"
           >
             Zum Login
           </button>
