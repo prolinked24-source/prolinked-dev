@@ -5,11 +5,26 @@ import { useRouter } from "next/navigation";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
 
+interface EmployerProfile {
+  company_name?: string;
+  contact_name?: string;
+  country?: string;
+}
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  employer?: EmployerProfile;
+}
+
 interface Job {
   id: number;
   title: string;
-  location?: string;
-  employment_type?: string;
+  location?: string | null;
+  employment_type?: string | null;
+  description: string;
   is_active: boolean;
   created_at: string;
 }
@@ -19,82 +34,84 @@ interface CandidateProfile {
   last_name?: string;
   country_of_origin?: string;
   target_country?: string;
-}
-
-interface CandidateUser {
-  id: number;
-  name: string;
-  email: string;
+  user?: {
+    email: string;
+  };
 }
 
 interface EmployerApplication {
   id: number;
   status: string;
   created_at: string;
-  candidate_profile: CandidateProfile & { user?: CandidateUser };
+  candidate_profile?: CandidateProfile;
 }
-
 
 export default function EmployerDashboardPage() {
   const router = useRouter();
 
-  const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobsLoading, setJobsLoading] = useState(true);
   const [jobsError, setJobsError] = useState<string | null>(null);
+
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
-  const [jobApplications, setJobApplications] = useState<EmployerApplication[]>(
-  []
-  );
+  const [jobApplications, setJobApplications] = useState<EmployerApplication[]>([]);
   const [appsLoading, setAppsLoading] = useState(false);
   const [appsError, setAppsError] = useState<string | null>(null);
 
-  const [title, setTitle] = useState("Software Engineer");
-  const [location, setLocation] = useState("Berlin");
-  const [employmentType, setEmploymentType] = useState("full-time");
-  const [description, setDescription] = useState(
-    "Entwicklung von Web-Applikationen für PROLINKED Partner."
-  );
-  const [requirements, setRequirements] = useState(
-    "Erfahrung mit PHP/Laravel oder Node/React."
-  );
-  const [languageRequirement, setLanguageRequirement] =
-    useState("Deutsch B2");
-  const [formError, setFormError] = useState<string | null>(null);
-  const [formMessage, setFormMessage] = useState<string | null>(null);
-  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [token, setToken] = useState<string | null>(null);
+  // Neues Job-Formular
+  const [title, setTitle] = useState("");
+  const [location, setLocation] = useState("");
+  const [employmentType, setEmploymentType] = useState("");
+  const [description, setDescription] = useState("");
+  const [creatingJob, setCreatingJob] = useState(false);
+  const [createMessage, setCreateMessage] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
 
-  // Token & Rolle prüfen
+  // User & Jobs laden
   useEffect(() => {
-    const t =
+    const token =
       typeof window !== "undefined"
         ? localStorage.getItem("prolinked_token")
         : null;
-    const role =
-      typeof window !== "undefined"
-        ? localStorage.getItem("prolinked_role")
-        : null;
 
-    if (!t) {
+    if (!token) {
       router.push("/login");
       return;
     }
 
-    setToken(t);
-    setUserRole(role);
-    setLoading(false);
-  }, [router]);
+    const fetchMe = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        });
 
-  // Jobs laden
-  useEffect(() => {
+        if (!res.ok) {
+          throw new Error("Fehler beim Laden des Benutzers.");
+        }
+
+        const data = (await res.json()) as User;
+        setUser(data);
+
+        if (data.role !== "employer") {
+          setError("Dieses Dashboard ist nur für Arbeitgeber.");
+        }
+      } catch (err: any) {
+        console.error(err);
+        setError(err.message || "Fehler beim Laden des Benutzers.");
+      }
+    };
+
     const fetchJobs = async () => {
-      if (!token) return;
-
       try {
         setJobsLoading(true);
+        setJobsError(null);
+
         const res = await fetch(`${API_BASE_URL}/employer/jobs`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -103,23 +120,25 @@ export default function EmployerDashboardPage() {
         });
 
         if (!res.ok) {
-          throw new Error("Fehler beim Laden der Jobs");
+          throw new Error("Fehler beim Laden der Jobs.");
         }
 
-        const data = (await res.json()) as Job[];
-        setJobs(data);
+        const data = await res.json();
+
+        // Wenn Backend Laravel-Pagination nutzt:
+        const list = Array.isArray(data) ? data : data.data;
+        setJobs(list || []);
       } catch (err: any) {
         console.error(err);
-        setJobsError(err.message || "Fehler beim Laden der Jobs");
+        setJobsError(err.message || "Fehler beim Laden der Jobs.");
       } finally {
         setJobsLoading(false);
       }
     };
 
-    if (token) {
-      fetchJobs();
-    }
-  }, [token]);
+    fetchMe();
+    fetchJobs();
+  }, [router]);
 
   const handleLogout = () => {
     if (typeof window !== "undefined") {
@@ -129,32 +148,95 @@ export default function EmployerDashboardPage() {
     router.push("/login");
   };
 
-  const handleCreateJob = async (e: FormEvent) => {
-    e.preventDefault();
-    setFormError(null);
-    setFormMessage(null);
+  // Bewerbungen zu einem Job laden
+  const handleViewApplications = async (jobId: number) => {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("prolinked_token")
+        : null;
 
     if (!token) {
-      setFormError("Nicht eingeloggt.");
+      setAppsError("Nicht eingeloggt.");
+      router.push("/login");
+      return;
+    }
+
+    setSelectedJobId(jobId);
+    setAppsError(null);
+    setJobApplications([]);
+    setAppsLoading(true);
+
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/employer/jobs/${jobId}/applications`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        }
+      );
+
+      if (!res.ok) {
+        let body: any = null;
+        try {
+          body = await res.json();
+        } catch {
+          // ignore
+        }
+        const msg =
+          body?.message ||
+          `Fehler beim Laden der Bewerbungen für Job ${jobId} (${res.status})`;
+        throw new Error(msg);
+      }
+
+      const data = (await res.json()) as EmployerApplication[];
+      setJobApplications(data || []);
+    } catch (err: any) {
+      console.error(err);
+      setAppsError(err.message || "Fehler beim Laden der Bewerbungen.");
+    } finally {
+      setAppsLoading(false);
+    }
+  };
+
+  // Job erstellen
+  const handleCreateJob = async (e: FormEvent) => {
+    e.preventDefault();
+    setCreateError(null);
+    setCreateMessage(null);
+
+    if (!title || !description) {
+      setCreateError("Titel und Beschreibung sind Pflichtfelder.");
+      return;
+    }
+
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("prolinked_token")
+        : null;
+
+    if (!token) {
+      setCreateError("Nicht eingeloggt.");
+      router.push("/login");
       return;
     }
 
     try {
-      setFormSubmitting(true);
+      setCreatingJob(true);
+
       const res = await fetch(`${API_BASE_URL}/employer/jobs`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
           Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           title,
           location,
           employment_type: employmentType,
           description,
-          requirements,
-          language_requirement: languageRequirement,
         }),
       });
 
@@ -166,80 +248,37 @@ export default function EmployerDashboardPage() {
           // ignore
         }
         const msg =
-          body?.message || `Job-Erstellung fehlgeschlagen (${res.status})`;
+          body?.message ||
+          `Job-Erstellung fehlgeschlagen (${res.status.toString()})`;
         throw new Error(msg);
       }
 
-      const job = (await res.json()) as Job;
-      setFormMessage("Job erfolgreich angelegt.");
-      setJobs((prev) => [job, ...prev]);
+      const data = await res.json();
+      setCreateMessage("Job erfolgreich erstellt.");
+
+      // Liste aktualisieren (Job anhängen)
+      setJobs((prev) => [data, ...prev]);
+
+      // Formular leeren
+      setTitle("");
+      setLocation("");
+      setEmploymentType("");
+      setDescription("");
     } catch (err: any) {
       console.error(err);
-      setFormError(err.message || "Fehler beim Anlegen des Jobs.");
+      setCreateError(err.message || "Fehler beim Erstellen des Jobs.");
     } finally {
-      setFormSubmitting(false);
+      setCreatingJob(false);
     }
   };
 
-  const handleViewApplications = async (jobId: number) => {
-  if (!token) {
-    setAppsError("Nicht eingeloggt.");
-    return;
-  }
-
-  setSelectedJobId(jobId);
-  setAppsError(null);
-  setJobApplications([]);
-  setAppsLoading(true);
-
-  try {
-    const res = await fetch(
-      `${API_BASE_URL}/employer/jobs/${jobId}/applications`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      }
-    );
-
-    if (!res.ok) {
-      let body: any = null;
-      try {
-        body = await res.json();
-      } catch {
-        // ignore
-      }
-      const msg =
-        body?.message ||
-        `Fehler beim Laden der Bewerbungen für Job ${jobId} (${res.status})`;
-      throw new Error(msg);
-    }
-
-    const data = (await res.json()) as EmployerApplication[];
-    setJobApplications(data);
-  } catch (err: any) {
-    console.error(err);
-    setAppsError(err.message || "Fehler beim Laden der Bewerbungen.");
-  } finally {
-    setAppsLoading(false);
-  }
-};
-
-  if (loading) {
-    return <div className="p-6">Lade Arbeitgeber-Dashboard...</div>;
-  }
-
-  if (userRole !== "employer") {
+  if (!user && !error && !loading && !jobsLoading) {
     return (
       <div className="p-6">
-        <p className="mb-4">
-          Dieses Dashboard ist nur für Arbeitgeber-Accounts. Bitte mit einem
-          Employer-Login anmelden.
-        </p>
+        <p className="mb-3">Kein Benutzer geladen. Bitte erneut einloggen.</p>
         <button
           onClick={handleLogout}
-          className="px-3 py-1 text-sm rounded bg-slate-200 hover:bg-slate-300"
+          className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 text-sm"
         >
           Zurück zum Login
         </button>
@@ -247,135 +286,208 @@ export default function EmployerDashboardPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <header className="bg-sky-900 text-sky-50 shadow">
+          <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-3">
+            <div className="flex items-center gap-2">
+              <span className="font-bold tracking-wide">PROLINKED</span>
+              <span className="text-[11px] uppercase opacity-70">
+                Employer
+              </span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="px-3 py-1 rounded bg-slate-100 text-sky-900 hover:bg-white text-xs font-semibold"
+            >
+              Logout
+            </button>
+          </div>
+        </header>
+        <main className="p-6 max-w-3xl mx-auto">
+          <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2 mb-3">
+            {error}
+          </p>
+          <button
+            onClick={handleLogout}
+            className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 text-sm"
+          >
+            Zurück zum Login
+          </button>
+        </main>
+      </div>
+    );
+  }
+
+  const profile = user?.employer || {};
+  const totalJobs = jobs.length;
+  const activeJobs = jobs.filter((j) => j.is_active).length;
+  const applicationsForSelectedJob = jobApplications.length;
+
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-sky-900 text-sky-50 shadow">
-  <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-3">
-    <div className="flex items-center gap-2">
-      <span className="font-bold tracking-wide">PROLINKED</span>
-      <span className="text-[11px] uppercase opacity-70">Employer</span>
-    </div>
-    <nav className="flex items-center gap-3 text-sm">
-      <button
-        onClick={() => router.push("/employer/dashboard")}
-        className="px-2 py-1 rounded hover:bg-sky-800"
-      >
-        Dashboard
-      </button>
-      <button
-        onClick={handleLogout}
-        className="px-3 py-1 rounded bg-slate-100 text-sky-900 hover:bg-white text-xs font-semibold"
-      >
-        Logout
-      </button>
-    </nav>
-  </div>
-</header>
-
+        <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-3">
+          <div className="flex items-center gap-2">
+            <span className="font-bold tracking-wide">PROLINKED</span>
+            <span className="text-[11px] uppercase opacity-70">
+              Employer
+            </span>
+          </div>
+          <nav className="flex items-center gap-3 text-sm">
+            <button
+              onClick={() => router.push("/employer/dashboard")}
+              className="px-2 py-1 rounded bg-sky-800"
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-3 py-1 rounded bg-slate-100 text-sky-900 hover:bg-white text-xs font-semibold"
+            >
+              Logout
+            </button>
+          </nav>
+        </div>
+      </header>
 
       <main className="p-6 max-w-5xl mx-auto space-y-6">
+        {/* KPI-Section */}
+        <section className="grid gap-4 md:grid-cols-3">
+          <div className="bg-white rounded-lg shadow p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Jobs gesamt
+            </p>
+            <p className="mt-2 text-2xl font-semibold text-slate-900">
+              {totalJobs}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Aktive Jobs
+            </p>
+            <p className="mt-2 text-2xl font-semibold text-slate-900">
+              {activeJobs}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Bewerbungen (ausgewählter Job)
+            </p>
+            <p className="mt-2 text-2xl font-semibold text-slate-900">
+              {selectedJobId ? applicationsForSelectedJob : "–"}
+            </p>
+          </div>
+        </section>
+
+        {/* Profil-Section */}
         <section className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-lg font-semibold mb-3">Neuen Job anlegen</h2>
+          <h2 className="text-lg font-semibold mb-2">Unternehmensprofil</h2>
+          <p className="text-sm text-slate-700">
+            Firma: {profile.company_name || user?.name || "–"}
+          </p>
+          <p className="text-sm text-slate-700">
+            Ansprechpartner: {profile.contact_name || "–"}
+          </p>
+          <p className="text-sm text-slate-700">
+            Land: {profile.country || "–"}
+          </p>
+        </section>
 
-          {formMessage && (
-            <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2 mb-2">
-              {formMessage}
+        {/* Job erstellen */}
+        <section className="bg-white rounded-lg shadow p-4">
+          <h2 className="text-lg font-semibold mb-3">Neuen Job erstellen</h2>
+
+          {createMessage && (
+            <p className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-3 py-2 mb-2">
+              {createMessage}
             </p>
           )}
-          {formError && (
-            <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2 mb-2">
-              {formError}
+          {createError && (
+            <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2 mb-2">
+              {createError}
             </p>
           )}
 
-          <form onSubmit={handleCreateJob} className="grid gap-3 md:grid-cols-2">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">Jobtitel</label>
+          <form onSubmit={handleCreateJob} className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-slate-800">
+                Jobtitel *
+              </label>
               <input
-                className="w-full border rounded px-3 py-2 text-sm"
+                type="text"
+                className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                required
               />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium mb-1 text-slate-800">
+                  Standort
+                </label>
+                <input
+                  type="text"
+                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-slate-800">
+                  Beschäftigungsart
+                </label>
+                <input
+                  type="text"
+                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
+                  value={employmentType}
+                  onChange={(e) => setEmploymentType(e.target.value)}
+                  placeholder="z.B. Vollzeit, Teilzeit"
+                />
+              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Ort</label>
-              <input
-                className="w-full border rounded px-3 py-2 text-sm"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Beschäftigungsart
-              </label>
-              <input
-                className="w-full border rounded px-3 py-2 text-sm"
-                value={employmentType}
-                onChange={(e) => setEmploymentType(e.target.value)}
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">
-                Beschreibung
+              <label className="block text-sm font-medium mb-1 text-slate-800">
+                Beschreibung *
               </label>
               <textarea
-                className="w-full border rounded px-3 py-2 text-sm"
-                rows={3}
+                className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50 min-h-[120px]"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">
-                Anforderungen
-              </label>
-              <textarea
-                className="w-full border rounded px-3 py-2 text-sm"
-                rows={3}
-                value={requirements}
-                onChange={(e) => setRequirements(e.target.value)}
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1">
-                Sprach-Anforderung
-              </label>
-              <input
-                className="w-full border rounded px-3 py-2 text-sm"
-                value={languageRequirement}
-                onChange={(e) => setLanguageRequirement(e.target.value)}
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <button
-                type="submit"
-                disabled={formSubmitting}
-                className="px-4 py-2 text-sm rounded bg-sky-700 text-white hover:bg-sky-700 disabled:opacity-50"
-              >
-                {formSubmitting ? "Job wird angelegt..." : "Job veröffentlichen"}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={creatingJob}
+              className="px-4 py-2 text-sm rounded bg-sky-700 text-white hover:bg-sky-800 disabled:opacity-50 transition"
+            >
+              {creatingJob ? "Job wird erstellt..." : "Job erstellen"}
+            </button>
           </form>
         </section>
 
+        {/* Jobliste + Bewerbungen */}
         <section className="bg-white rounded-lg shadow p-4">
           <h2 className="text-lg font-semibold mb-3">Meine Jobs</h2>
 
-          {jobsLoading && <p className="text-sm">Jobs werden geladen...</p>}
           {jobsError && (
-            <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2 mb-2">{jobsError}</p>
+            <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2 mb-2">
+              {jobsError}
+            </p>
           )}
 
-          {!jobsLoading && jobs.length === 0 && (
-            <p className="text-sm text-slate-700">
+          {jobsLoading && (
+            <p className="text-sm">Jobs werden geladen...</p>
+          )}
+
+          {!jobsLoading && jobs.length === 0 && !jobsError && (
+            <p className="text-sm text-slate-600">
               Noch keine Jobs angelegt.
             </p>
           )}
@@ -383,84 +495,82 @@ export default function EmployerDashboardPage() {
           <ul className="divide-y divide-slate-200">
             {jobs.map((job) => (
               <li key={job.id} className="py-2 text-sm">
-                <div className="font-medium">{job.title}</div>
-                <div className="text-slate-700">
-                  {job.location || "Ort n/a"} –{" "}
-                  {job.employment_type || "Typ n/a"}
-                </div>
-                <div className="text-slate-700">
-                  Aktiv: {job.is_active ? "Ja" : "Nein"} –{" "}
-                  Erstellt am: {new Date(job.created_at).toLocaleString()}
+                <div className="flex justify-between items-start gap-4">
+                  <div>
+                    <div className="font-medium text-sm md:text-base">
+                      {job.title}
+                    </div>
+                    <div className="text-slate-600 text-xs md:text-sm">
+                      {job.location || "Ort n/a"} –{" "}
+                      {job.employment_type || "Typ n/a"}
+                    </div>
+                    <div className="text-slate-500 text-xs">
+                      Aktiv: {job.is_active ? "Ja" : "Nein"} – Erstellt am:{" "}
+                      {new Date(job.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="shrink-0 flex flex-col gap-2">
+                    <button
+                      onClick={() => handleViewApplications(job.id)}
+                      className="px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 text-xs"
+                    >
+                      Bewerbungen ansehen
+                    </button>
+                  </div>
                 </div>
               </li>
             ))}
           </ul>
-          <ul className="divide-y divide-slate-200">
-  {jobs.map((job) => (
-    <li key={job.id} className="py-2 text-sm">
-      <div className="flex justify-between items-start gap-4">
-        <div>
-          <div className="font-medium">{job.title}</div>
-          <div className="text-slate-700">
-            {job.location || "Ort n/a"} –{" "}
-            {job.employment_type || "Typ n/a"}
+
+          <div className="mt-4 border-t pt-4">
+            <h3 className="text-md font-semibold mb-2">
+              Bewerbungen für Job{" "}
+              {selectedJobId ? `#${selectedJobId}` : "(Job auswählen)"}
+            </h3>
+
+            {appsLoading && (
+              <p className="text-sm">Bewerbungen werden geladen...</p>
+            )}
+            {appsError && (
+              <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2 mb-2">
+                {appsError}
+              </p>
+            )}
+
+            {!appsLoading &&
+              selectedJobId &&
+              jobApplications.length === 0 &&
+              !appsError && (
+                <p className="text-sm text-slate-600">
+                  Für diesen Job liegen aktuell keine Bewerbungen vor.
+                </p>
+              )}
+
+            <ul className="divide-y divide-slate-200">
+              {jobApplications.map((app) => (
+                <li key={app.id} className="py-2 text-sm">
+                  <div className="font-medium">
+                    {app.candidate_profile?.first_name}{" "}
+                    {app.candidate_profile?.last_name}
+                  </div>
+                  <div className="text-slate-600 text-xs md:text-sm">
+                    Herkunftsland:{" "}
+                    {app.candidate_profile?.country_of_origin || "–"} – Zielland:{" "}
+                    {app.candidate_profile?.target_country || "–"}
+                  </div>
+                  <div className="text-slate-500 text-xs">
+                    Status: {app.status} – Erstellt am:{" "}
+                    {new Date(app.created_at).toLocaleString()}
+                  </div>
+                  {app.candidate_profile?.user?.email && (
+                    <div className="text-slate-500 text-xs">
+                      E-Mail: {app.candidate_profile.user.email}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
-          <div className="text-slate-700">
-            Aktiv: {job.is_active ? "Ja" : "Nein"} – Erstellt am:{" "}
-            {new Date(job.created_at).toLocaleString()}
-          </div>
-        </div>
-        <div className="shrink-0 flex flex-col gap-2">
-          <button
-            onClick={() => handleViewApplications(job.id)}
-            className="px-3 py-1 rounded bg-emerald-700 text-white hover:bg-emerald-700 text-xs"
-          >
-            Bewerbungen ansehen
-              </button>
-            </div>
-         <div className="mt-4 border-t pt-4">
-  <h3 className="text-md font-semibold mb-2">
-    Bewerbungen für Job{" "}
-    {selectedJobId ? `#${selectedJobId}` : "(Job auswählen)"}
-  </h3>
-
-  {appsLoading && <p className="text-sm">Bewerbungen werden geladen...</p>}
-  {appsError && (
-    <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2 mb-2">{appsError}</p>
-  )}
-
-  {!appsLoading && selectedJobId && jobApplications.length === 0 && !appsError && (
-    <p className="text-sm text-slate-700">
-      Für diesen Job liegen aktuell keine Bewerbungen vor.
-    </p>
-  )}
-
-  <ul className="divide-y divide-slate-200">
-    {jobApplications.map((app) => (
-      <li key={app.id} className="py-2 text-sm">
-        <div className="font-medium">
-          {app.candidate_profile?.first_name}{" "}
-          {app.candidate_profile?.last_name}
-        </div>
-        <div className="text-slate-700">
-          Herkunftsland:{" "}
-          {app.candidate_profile?.country_of_origin || "–"} – Zielland:{" "}
-          {app.candidate_profile?.target_country || "–"}
-        </div>
-        <div className="text-slate-700">
-          Status: {app.status} – Erstellt am:{" "}
-          {new Date(app.created_at).toLocaleString()}
-        </div>
-      </li>
-    ))}
-  </ul>
-</div>
-
-           </div>
-          </li>
-         ))}
-        </ul>
-
         </section>
       </main>
     </div>
