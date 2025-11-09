@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
@@ -23,6 +23,7 @@ export default function JobsPage() {
 
   const [search, setSearch] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
+
   const [loadingApply, setLoadingApply] = useState<number | null>(null);
   const [applyMessage, setApplyMessage] = useState<string | null>(null);
   const [applyError, setApplyError] = useState<string | null>(null);
@@ -72,7 +73,6 @@ export default function JobsPage() {
       }
 
       const data = await res.json();
-      // Laravel-Pagination: data.data = eigentliche Liste
       const list = Array.isArray(data) ? data : data.data;
       setJobs(list || []);
     } catch (err: any) {
@@ -116,10 +116,9 @@ export default function JobsPage() {
         try {
           body = await res.json();
         } catch {
-          // ignore
+          // ignore parse error
         }
 
-        // Falls Backend 409 bei "already applied"
         if (res.status === 409) {
           throw new Error(
             body?.message || "Du hast dich bereits auf diesen Job beworben."
@@ -141,82 +140,108 @@ export default function JobsPage() {
   };
 
   const handleBackToDashboard = () => {
+    // Für Kandidaten sinnvoll – später ggf. rollenspezifisch erweitern
     router.push("/candidate/dashboard");
   };
 
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-sky-900 text-sky-50 shadow">
-  <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-3">
-    <div className="flex items-center gap-2">
-      <span className="font-bold tracking-wide">PROLINKED</span>
-      <span className="text-[11px] uppercase opacity-70">Jobs</span>
-    </div>
-    <nav className="flex items-center gap-3 text-sm">
-      <button
-        onClick={() => router.push("/candidate/dashboard")}
-        className="px-2 py-1 rounded hover:bg-sky-800"
-      >
-        Dashboard
-      </button>
-      <button
-        onClick={() => router.push("/jobs")}
-        className="px-2 py-1 rounded bg-sky-800"
-      >
-        Jobs
-      </button>
-    </nav>
-  </div>
-</header>
+        <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-3">
+          <div className="flex items-center gap-2">
+            <span className="font-bold tracking-wide">PROLINKED</span>
+            <span className="text-[11px] uppercase opacity-70">
+              Jobs
+            </span>
+          </div>
+          <nav className="flex items-center gap-3 text-sm">
+            <button
+              onClick={handleBackToDashboard}
+              className="px-2 py-1 rounded hover:bg-sky-800"
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={() => router.push("/jobs")}
+              className="px-2 py-1 rounded bg-sky-800"
+            >
+              Jobs
+            </button>
+          </nav>
+        </div>
+      </header>
 
-
-      <main className="p-6 max-w-5xl mx-auto space-y-4">
+      <main className="p-6 max-w-5xl mx-auto space-y-6">
+        {/* Filter-Section */}
         <section className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-lg font-semibold mb-3">Jobs suchen</h2>
-
+          <h1 className="text-lg font-semibold mb-3">Jobs suchen</h1>
           <form
             onSubmit={handleFilterSubmit}
-            className="flex flex-col md:flex-row gap-3"
+            className="grid gap-3 md:grid-cols-[2fr,2fr,auto]"
           >
-            <input
-              type="text"
-              placeholder="Suche nach Titel oder Beschreibung..."
-              className="flex-1 border rounded px-3 py-2 text-sm"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <input
-              type="text"
-              placeholder="Ort (z.B. Berlin)"
-              className="w-full md:w-48 border rounded px-3 py-2 text-sm"
-              value={locationFilter}
-              onChange={(e) => setLocationFilter(e.target.value)}
-            />
-            <button
-              type="submit"
-              className="px-4 py-2 text-sm rounded bg-sky-600 text-white hover:bg-sky-700"
-            >
-              Filtern
-            </button>
+            <div>
+              <label className="block text-xs font-medium mb-1 text-slate-700">
+                Stichwort (Titel, Beschreibung)
+              </label>
+              <input
+                type="text"
+                className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="z. B. Pflegekraft, IT, Bau..."
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1 text-slate-700">
+                Ort
+              </label>
+              <input
+                type="text"
+                className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 bg-slate-50"
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
+                placeholder="z. B. Berlin, München..."
+              />
+            </div>
+
+            <div className="flex items-end">
+              <button
+                type="submit"
+                className="w-full md:w-auto px-4 py-2 text-sm rounded bg-sky-700 text-white hover:bg-sky-800 transition"
+              >
+                Filtern
+              </button>
+            </div>
           </form>
         </section>
 
+        {/* Jobliste */}
         <section className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-lg font-semibold mb-3">Verfügbare Jobs</h2>
+          <h2 className="text-lg font-semibold mb-3">
+            Verfügbare Jobs
+          </h2>
 
           {applyMessage && (
-            <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2 mb-2">
+            <p className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-3 py-2 mb-2">
               {applyMessage}
             </p>
           )}
           {applyError && (
-            <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2 mb-2">
+            <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2 mb-2">
               {applyError}
             </p>
           )}
 
-          {loading && <p className="text-sm">Jobs werden geladen...</p>}
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {loading && (
+            <p className="text-sm">Jobs werden geladen...</p>
+          )}
+
+          {error && (
+            <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2 mb-2">
+              {error}
+            </p>
+          )}
 
           {!loading && jobs.length === 0 && !error && (
             <p className="text-sm text-slate-600">
@@ -227,24 +252,26 @@ export default function JobsPage() {
           <ul className="divide-y divide-slate-200">
             {jobs.map((job) => (
               <li key={job.id} className="py-3 text-sm">
-                <div className="flex justify-between items-start gap-4">
+                <div className="flex flex-col gap-1 md:flex-row md:items-start md:justify-between">
                   <div>
-                    <div className="font-medium text-base">{job.title}</div>
-                    <div className="text-slate-600">
+                    <div className="font-medium text-sm md:text-base">
+                      {job.title}
+                    </div>
+                    <div className="text-slate-600 text-xs md:text-sm">
                       {job.location || "Ort n/a"} –{" "}
                       {job.employment_type || "Beschäftigungsart n/a"}
                     </div>
                     {job.language_requirement && (
-                      <div className="text-slate-500">
+                      <div className="text-slate-500 text-xs">
                         Sprache: {job.language_requirement}
                       </div>
                     )}
-                    <p className="mt-1 text-slate-700 text-xs">
+                    <div className="text-slate-700 text-sm mt-1">
                       {job.description.slice(0, 200)}
-                      {job.description.length > 200 ? "..." : ""}
-                    </p>
+                      {job.description.length > 200 ? " ..." : ""}
+                    </div>
                   </div>
-                  <div className="shrink-0">
+                  <div className="mt-2 md:mt-0 md:ml-4">
                     <button
                       onClick={() => handleApply(job.id)}
                       disabled={loadingApply === job.id}
