@@ -315,6 +315,57 @@ const lastApplicationDate = totalApplications
       </header>
 
       <main className="p-6 max-w-5xl mx-auto space-y-6">
+        
+  {/* KPI-Section */}
+  <section className="grid gap-4 md:grid-cols-3">
+    <div className="bg-white rounded-lg shadow p-4">
+      <p className="text-xs uppercase tracking-wide text-slate-500">
+        Bewerbungen gesamt
+      </p>
+      <p className="mt-2 text-2xl font-semibold text-slate-900">
+        {totalApplications}
+      </p>
+    </div>
+
+    <div className="bg-white rounded-lg shadow p-4">
+      <p className="text-xs uppercase tracking-wide text-slate-500">
+        Letzte Bewerbung
+      </p>
+      <p className="mt-2 text-sm font-medium text-slate-900">
+        {lastApplicationDate
+          ? lastApplicationDate.toLocaleString()
+          : "Noch keine Bewerbungen"}
+      </p>
+    </div>
+
+    <div className="bg-white rounded-lg shadow p-4">
+      <p className="text-xs uppercase tracking-wide text-slate-500">
+        Profilstatus
+      </p>
+      <p className="mt-2 text-sm font-medium text-emerald-700">
+        {profile.first_name && profile.last_name
+          ? "Basisdaten vorhanden"
+          : "Profil unvollständig"}
+      </p>
+    </div>
+  </section>
+
+  {/* Profil-Section */}
+  <section className="bg-white rounded-lg shadow p-4">
+    ...
+  </section>
+
+  {/* CV-Upload */}
+  <section className="bg-white rounded-lg shadow p-4">
+    ...
+  </section>
+
+  {/* Bewerbungen */}
+  <section className="bg-white rounded-lg shadow p-4">
+    ...
+  </section>
+</main>
+
         {/* Profil-Section */}
         <section className="bg-white rounded-lg shadow p-4">
           <h2 className="text-lg font-semibold mb-2">Profil</h2>
