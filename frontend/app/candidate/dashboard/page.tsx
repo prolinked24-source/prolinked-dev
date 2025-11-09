@@ -40,6 +40,14 @@ interface Application {
   };
 }
 
+const secondaryButtonClass =
+  "flex items-center gap-2 rounded-lg border border-slate-400 bg-white px-3 py-2 text-xs md:text-sm " +
+  "text-slate-900 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6]";
+
+const primaryButtonClass =
+  "rounded-lg bg-emerald-700 text-white text-xs md:text-sm font-medium px-3 py-2 " +
+  "hover:bg-emerald-800 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#5BE1E6]";
+
 export default function CandidateDashboardPage() {
   const router = useRouter();
 
@@ -54,7 +62,6 @@ export default function CandidateDashboardPage() {
   const [cvUploading, setCvUploading] = useState(false);
   const [cvMessage, setCvMessage] = useState<string | null>(null);
   const [cvError, setCvError] = useState<string | null>(null);
-  const [cvProgress, setCvProgress] = useState<number | null>(null);
 
   // Benutzer & Bewerbungen laden
   useEffect(() => {
@@ -137,7 +144,7 @@ export default function CandidateDashboardPage() {
     setCvFile(file);
   };
 
-  const handleCvUpload = (e: FormEvent) => {
+  const handleCvUpload = async (e: FormEvent) => {
     e.preventDefault();
     setCvError(null);
     setCvMessage(null);
@@ -158,58 +165,44 @@ export default function CandidateDashboardPage() {
       return;
     }
 
-    setCvUploading(true);
-    setCvProgress(0);
+    try {
+      setCvUploading(true);
 
-    const formData = new FormData();
-    formData.append("cv", cvFile);
+      const formData = new FormData();
+      formData.append("cv", cvFile);
 
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", `${API_BASE_URL}/candidate/cv`, true);
-    xhr.setRequestHeader("Accept", "application/json");
-    xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      const res = await fetch(`${API_BASE_URL}/candidate/cv`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+        body: formData,
+      });
 
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percent = Math.round((event.loaded / event.total) * 100);
-        setCvProgress(percent);
-      }
-    };
-
-    xhr.onreadystatechange = () => {
-      if (xhr.readyState !== XMLHttpRequest.DONE) return;
-
-      setCvUploading(false);
-
-      let body: any = null;
-      try {
-        body = xhr.responseText ? JSON.parse(xhr.responseText) : null;
-      } catch {
-        // ignore parse error
-      }
-
-      if (xhr.status >= 200 && xhr.status < 300) {
-        setCvMessage("CV erfolgreich hochgeladen.");
-        setCvError(null);
-      } else {
+      if (!res.ok) {
+        let body: any = null;
+        try {
+          body = await res.json();
+        } catch {
+          // ignore
+        }
         const msg =
           body?.message ||
-          `Upload fehlgeschlagen (${xhr.status.toString()})`;
-        setCvError(msg);
-        setCvMessage(null);
+          `Upload fehlgeschlagen (${res.status.toString()})`;
+        throw new Error(msg);
       }
 
-      setCvProgress(null);
-    };
-
-    xhr.onerror = () => {
+      const data = await res.json();
+      console.log("CV upload response:", data);
+      setCvMessage("CV erfolgreich hochgeladen.");
+      setCvFile(null);
+    } catch (err: any) {
+      console.error(err);
+      setCvError(err.message || "Fehler beim Upload der CV.");
+    } finally {
       setCvUploading(false);
-      setCvError("Netzwerkfehler beim Upload der CV.");
-      setCvMessage(null);
-      setCvProgress(null);
-    };
-
-    xhr.send(formData);
+    }
   };
 
   if (loading) {
@@ -237,11 +230,17 @@ export default function CandidateDashboardPage() {
       <div className="min-h-screen bg-slate-50">
         <header className="bg-sky-900 text-sky-50 shadow">
           <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-3">
-            <div className="flex items-center gap-2">
-              <span className="font-bold tracking-wide">PROLINKED</span>
-              <span className="text-[11px] uppercase opacity-70">
-                Candidate
-              </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold tracking-wide">PROLINKED</span>
+                <span className="text-[11px] uppercase opacity-70">
+                  Candidate
+                </span>
+              </div>
+              <div
+                className="mt-1 h-0.5 w-16 rounded-full"
+                style={{ backgroundColor: "#5BE1E6" }}
+              />
             </div>
             <button
               onClick={handleLogout}
@@ -267,26 +266,22 @@ export default function CandidateDashboardPage() {
   }
 
   const profile = user.candidate_profile || {};
-  const totalApplications = applications.length;
-  const lastApplicationDate = totalApplications
-    ? new Date(
-        Math.max(
-          ...applications.map((a) =>
-            new Date(a.created_at).getTime()
-          )
-        )
-      )
-    : null;
 
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-sky-900 text-sky-50 shadow">
         <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-2">
-            <span className="font-bold tracking-wide">PROLINKED</span>
-            <span className="text-[11px] uppercase opacity-70">
-              Candidate
-            </span>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold tracking-wide">PROLINKED</span>
+              <span className="text-[11px] uppercase opacity-70">
+                Candidate
+              </span>
+            </div>
+            <div
+              className="mt-1 h-0.5 w-16 rounded-full"
+              style={{ backgroundColor: "#5BE1E6" }}
+            />
           </div>
           <nav className="flex items-center gap-3 text-sm">
             <button
@@ -312,43 +307,11 @@ export default function CandidateDashboardPage() {
       </header>
 
       <main className="p-6 max-w-5xl mx-auto space-y-6">
-        {/* KPI-Section */}
-        <section className="grid gap-4 md:grid-cols-3">
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Bewerbungen gesamt
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">
-              {totalApplications}
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Letzte Bewerbung
-            </p>
-            <p className="mt-2 text-sm font-medium text-slate-900">
-              {lastApplicationDate
-                ? lastApplicationDate.toLocaleString()
-                : "Noch keine Bewerbungen"}
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Profilstatus
-            </p>
-            <p className="mt-2 text-sm font-medium text-emerald-700">
-              {profile.first_name && profile.last_name
-                ? "Basisdaten vorhanden"
-                : "Profil unvollständig"}
-            </p>
-          </div>
-        </section>
-
         {/* Profil-Section */}
-        <section className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-lg font-semibold mb-2">Profil</h2>
+        <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+          <h2 className="text-lg font-semibold mb-2 text-slate-900">
+            Profil
+          </h2>
           <p className="text-sm text-slate-700">
             Name: {profile.first_name} {profile.last_name}
           </p>
@@ -361,8 +324,8 @@ export default function CandidateDashboardPage() {
         </section>
 
         {/* CV-Upload */}
-        <section className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-lg font-semibold mb-2">
+        <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+          <h2 className="text-lg font-semibold mb-2 text-slate-900">
             CV / Lebenslauf hochladen
           </h2>
           <p className="text-xs text-slate-700 mb-3">
@@ -381,20 +344,6 @@ export default function CandidateDashboardPage() {
             </p>
           )}
 
-          {cvUploading && cvProgress !== null && (
-            <div className="mb-2">
-              <div className="w-full bg-slate-200 rounded h-2 overflow-hidden">
-                <div
-                  className="h-2 bg-sky-600 transition-all"
-                  style={{ width: `${cvProgress}%` }}
-                />
-              </div>
-              <p className="mt-1 text-xs text-slate-600">
-                Upload: {cvProgress}%
-              </p>
-            </div>
-          )}
-
           <form onSubmit={handleCvUpload} className="space-y-3">
             <input
               id="cvInput"
@@ -404,29 +353,35 @@ export default function CandidateDashboardPage() {
               className="hidden"
             />
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <button
                 type="button"
                 onClick={() =>
                   document.getElementById("cvInput")?.click()
                 }
-                className="flex items-center gap-2 px-4 py-2 text-sm rounded bg-sky-700 text-white hover:bg-sky-800 transition"
+                className={secondaryButtonClass}
               >
                 <Upload className="w-4 h-4" />
-                {cvFile ? "Datei ändern" : "Datei auswählen"}
+                <span>{cvFile ? "Datei ändern" : "Datei auswählen"}</span>
               </button>
 
               {cvFile && (
-                <span className="text-xs text-slate-700 truncate max-w-[180px]">
+                <span className="text-xs text-slate-700 truncate max-w-[220px]">
                   {cvFile.name}
                 </span>
               )}
             </div>
 
+            {cvUploading && (
+              <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
+                <div className="h-full w-1/2 bg-[#5BE1E6] animate-pulse" />
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={cvUploading || !cvFile}
-              className="px-4 py-2 text-sm rounded bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50 transition"
+              className={primaryButtonClass}
             >
               {cvUploading ? "Upload läuft..." : "CV hochladen"}
             </button>
@@ -434,8 +389,8 @@ export default function CandidateDashboardPage() {
         </section>
 
         {/* Bewerbungen */}
-        <section className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-lg font-semibold mb-3">
+        <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+          <h2 className="text-lg font-semibold mb-3 text-slate-900">
             Meine Bewerbungen
           </h2>
 
@@ -455,17 +410,18 @@ export default function CandidateDashboardPage() {
             </p>
           )}
 
-          <ul className="divide-y divide-slate-200">
+          <ul className="divide-y divide-slate-200 mt-2">
             {applications.map((app) => (
               <li key={app.id} className="py-2 text-sm">
-                <div className="font-medium">
+                <div className="font-medium text-slate-900">
                   {app.job?.title}
                 </div>
                 <div className="text-slate-600">
-                  {app.job?.employer?.company_name || "Unbekannter Arbeitgeber"}{" "}
+                  {app.job?.employer?.company_name ||
+                    "Unbekannter Arbeitgeber"}{" "}
                   – {app.job?.location || "Ort n/a"}
                 </div>
-                <div className="text-slate-500">
+                <div className="text-slate-500 text-xs">
                   Status: {app.status} – Erstellt am:{" "}
                   {new Date(app.created_at).toLocaleString()}
                 </div>
