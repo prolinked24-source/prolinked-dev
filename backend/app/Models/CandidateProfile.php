@@ -18,6 +18,7 @@ class CandidateProfile extends Model
         'desired_position',
         'cv_path',
         'summary',
+        'status',
     ];
 
     public function user()
