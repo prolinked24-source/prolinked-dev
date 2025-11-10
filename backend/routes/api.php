@@ -7,6 +7,11 @@ use App\Http\Controllers\Api\JobController;
 use App\Http\Controllers\Api\ApplicationController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\AdminCandidateController;
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::patch('/admin/candidates/{candidateUserId}/status', [AdminCandidateController::class, 'updateStatus']);
+});
 
 Route::get('/ping', function () {
     return response()->json(['message' => 'pong']);
