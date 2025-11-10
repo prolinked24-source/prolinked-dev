@@ -6,23 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('candidate_profiles', function (Blueprint $table) {
-            //
+            $table->enum('status', ['new', 'reviewed', 'eligible'])
+                  ->default('new')
+                  ->after('target_country');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('candidate_profiles', function (Blueprint $table) {
-            //
+            $table->dropColumn('status');
         });
     }
 };
