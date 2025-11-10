@@ -349,6 +349,18 @@ export default function EmployerDashboardPage() {
   const totalJobs = jobs.length;
   const activeJobs = jobs.filter((j) => j.is_active).length;
   const applicationsForSelectedJob = jobApplications.length;
+  const hasJobs = totalJobs > 0;
+  const hasApplications = jobs.some((j) => j.is_active) && (jobApplications.length > 0 || appsLoading);
+
+  // Stepper-Klassen (ähnlich Candidate, aber 3 Schritte)
+  const stepBase =
+    "flex-1 rounded-lg border px-3 py-2 flex items-center gap-2 text-xs md:text-sm";
+  const stepDone = "border-emerald-400 bg-emerald-50 text-emerald-900";
+  const stepCurrent = "border-sky-400 bg-sky-50 text-sky-900";
+  const stepUpcoming = "border-slate-200 bg-slate-50 text-slate-600";
+
+  const circleBase =
+    "flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-semibold";
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -384,6 +396,107 @@ export default function EmployerDashboardPage() {
       </header>
 
       <main className="p-6 max-w-5xl mx-auto space-y-6">
+        {/* Stepper – Hiring-Flow */}
+        <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+          <h2 className="text-sm font-semibold mb-3 text-slate-900">
+            Hiring-Flow
+          </h2>
+          <p className="text-[11px] text-slate-600 mb-3">
+            Übersicht über die drei zentralen Schritte im PROLINKED-Hiring:
+            <span className="font-semibold"> Job anlegen</span>,{" "}
+            <span className="font-semibold">Bewerbungen prüfen</span> und{" "}
+            <span className="font-semibold">Kandidaten kontaktieren</span>.
+          </p>
+          <div className="flex flex-col md:flex-row md:items-stretch gap-3">
+            {/* Schritt 1: Job anlegen */}
+            <div
+              className={
+                stepBase +
+                " " +
+                (hasJobs ? stepDone : stepCurrent)
+              }
+            >
+              <div
+                className={
+                  circleBase +
+                  " " +
+                  (hasJobs
+                    ? "bg-emerald-500 text-white"
+                    : "bg-sky-600 text-white")
+                }
+              >
+                1
+              </div>
+              <div>
+                <p className="font-semibold">Job anlegen</p>
+                <p className="text-[11px] text-slate-600">
+                  Stellenanzeige erstellen und veröffentlichen.
+                </p>
+              </div>
+            </div>
+
+            {/* Schritt 2: Bewerbungen prüfen */}
+            <div
+              className={
+                stepBase +
+                " " +
+                (hasJobs && hasApplications
+                  ? stepDone
+                  : hasJobs
+                  ? stepCurrent
+                  : stepUpcoming)
+              }
+            >
+              <div
+                className={
+                  circleBase +
+                  " " +
+                  (hasJobs && hasApplications
+                    ? "bg-emerald-500 text-white"
+                    : hasJobs
+                    ? "bg-sky-600 text-white"
+                    : "bg-slate-300 text-slate-700")
+                }
+              >
+                2
+              </div>
+              <div>
+                <p className="font-semibold">Bewerbungen prüfen</p>
+                <p className="text-[11px] text-slate-600">
+                  Eingehende Bewerbungen sichten & vergleichen.
+                </p>
+              </div>
+            </div>
+
+            {/* Schritt 3: Kandidaten kontaktieren */}
+            <div
+              className={
+                stepBase +
+                " " +
+                (hasApplications ? stepCurrent : stepUpcoming)
+              }
+            >
+              <div
+                className={
+                  circleBase +
+                  " " +
+                  (hasApplications
+                    ? "bg-sky-600 text-white"
+                    : "bg-slate-300 text-slate-700")
+                }
+              >
+                3
+              </div>
+              <div>
+                <p className="font-semibold">Kandidaten kontaktieren</p>
+                <p className="text-[11px] text-slate-600">
+                  Geeignete Kandidaten per E-Mail erreichen.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* KPI-Section */}
         <section className="grid gap-4 md:grid-cols-3">
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
@@ -491,10 +604,7 @@ export default function EmployerDashboardPage() {
                 Beschreibung *
               </label>
               <textarea
-                className={
-                  inputClass +
-                  " min-h-[120px] resize-y"
-                }
+                className={inputClass + " min-h-[120px] resize-y"}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
