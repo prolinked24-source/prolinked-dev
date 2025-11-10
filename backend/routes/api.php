@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CandidateProfileController;
 use App\Http\Controllers\Api\JobController;
 use App\Http\Controllers\Api\ApplicationController;
+use App\Http\Controllers\DocumentController;
 
 Route::get('/ping', function () {
     return response()->json(['message' => 'pong']);
@@ -12,6 +13,11 @@ Route::get('/ping', function () {
 
 
 Route::prefix('v1')->group(function () {
+    // DocController
+    Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/candidate/documents', [DocumentController::class, 'index']);
+    Route::post('/candidate/documents', [DocumentController::class, 'upload']);
+    Route::delete('/candidate/documents/{id}', [DocumentController::class, 'destroy']);
 
     // Auth
     Route::post('/auth/register-candidate', [AuthController::class, 'registerCandidate']);
