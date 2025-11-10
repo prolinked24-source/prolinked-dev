@@ -6,11 +6,16 @@ use App\Http\Controllers\Api\CandidateProfileController;
 use App\Http\Controllers\Api\JobController;
 use App\Http\Controllers\Api\ApplicationController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\ReviewController;
 
 Route::get('/ping', function () {
     return response()->json(['message' => 'pong']);
 });
 
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/admin/reviews/{candidateUserId}', [ReviewController::class, 'index']);
+    Route::post('/admin/reviews', [ReviewController::class, 'store']);
+});
 
 Route::prefix('v1')->group(function () {
     // DocController
