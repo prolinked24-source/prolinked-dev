@@ -8,6 +8,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
+import DocumentManager from "../../components/DocumentManager";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
 
@@ -16,6 +17,7 @@ interface CandidateProfile {
   last_name?: string;
   country_of_origin?: string;
   target_country?: string;
+  status?: "new" | "reviewed" | "eligible" | string;
 }
 
 interface User {
@@ -63,7 +65,7 @@ export default function CandidateDashboardPage() {
   const [cvMessage, setCvMessage] = useState<string | null>(null);
   const [cvError, setCvError] = useState<string | null>(null);
 
-  // simple „Status“-Flag für Stepper – wird nach erfolgreichem Upload gesetzt
+  // simple „Status“-Flag für Stepper – nach CV-Upload
   const [hasUploadedCv, setHasUploadedCv] = useState(false);
 
   // Benutzer & Bewerbungen laden
@@ -285,6 +287,20 @@ export default function CandidateDashboardPage() {
   const circleBase =
     "flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-semibold";
 
+  const statusLabel =
+    profile.status === "eligible"
+      ? "Vermittelbar"
+      : profile.status === "reviewed"
+      ? "Geprüft"
+      : "Neu";
+
+  const statusClass =
+    profile.status === "eligible"
+      ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+      : profile.status === "reviewed"
+      ? "text-sky-700 bg-sky-50 border-sky-200"
+      : "text-slate-600 bg-slate-50 border-slate-200";
+
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-sky-900 text-sky-50 shadow">
@@ -330,7 +346,7 @@ export default function CandidateDashboardPage() {
           <h2 className="text-sm font-semibold mb-3 text-slate-900">
             Mein Vermittlungsstatus
           </h2>
-          <div className="flex flex-col md:flex-row md:items-stretch gap-3">
+          <div className="flex flex-col md:flex-row md:items-stretch gap-3 mb-3">
             {/* Schritt 1: Profil */}
             <div
               className={
@@ -447,6 +463,20 @@ export default function CandidateDashboardPage() {
               </div>
             </div>
           </div>
+
+          {/* Status-Badge */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-slate-600">Aktueller Status:</span>
+            <span
+              className={
+                "inline-flex items-center gap-1 px-2 py-1 rounded-full border text-[11px] " +
+                statusClass
+              }
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-current" />
+              {statusLabel}
+            </span>
+          </div>
         </section>
 
         {/* Profil-Section */}
@@ -529,6 +559,9 @@ export default function CandidateDashboardPage() {
             </button>
           </form>
         </section>
+
+        {/* NEU: Dokumentenverwaltung */}
+        <DocumentManager />
 
         {/* Bewerbungen */}
         <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
