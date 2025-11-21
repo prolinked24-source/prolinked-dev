@@ -1,13 +1,7 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-  ChangeEvent,
-  FormEvent,
-} from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Upload } from "lucide-react";
 import DocumentManager from "../../components/DocumentManager";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
@@ -42,14 +36,6 @@ interface Application {
   };
 }
 
-const secondaryButtonClass =
-  "flex items-center gap-2 rounded-lg border border-slate-400 bg-white px-3 py-2 text-xs md:text-sm " +
-  "text-slate-900 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6]";
-
-const primaryButtonClass =
-  "rounded-lg bg-emerald-700 text-white text-xs md:text-sm font-medium px-3 py-2 " +
-  "hover:bg-emerald-800 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[#5BE1E6]";
-
 export default function CandidateDashboardPage() {
   const router = useRouter();
 
@@ -59,10 +45,6 @@ export default function CandidateDashboardPage() {
   const [loadingApps, setLoadingApps] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [appsError, setAppsError] = useState<string | null>(null);
-
-
-  // simple „Status“-Flag für Stepper – nach CV-Upload
-  const [hasUploadedCv, setHasUploadedCv] = useState(false);
 
   // Benutzer & Bewerbungen laden
   useEffect(() => {
@@ -138,58 +120,6 @@ export default function CandidateDashboardPage() {
     router.push("/login");
   };
 
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("prolinked_token")
-        : null;
-
-    if (!token) {
-      setCvError("Nicht eingeloggt. Bitte erneut einloggen.");
-      router.push("/login");
-      return;
-    }
-
-    try {
-      setCvUploading(true);
-
-      const formData = new FormData();
-      formData.append("cv", cvFile);
-
-      const res = await fetch(`${API_BASE_URL}/candidate/cv`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-        body: formData,
-      });
-
-      if (!res.ok) {
-        let body: any = null;
-        try {
-          body = await res.json();
-        } catch {
-          // ignore
-        }
-        const msg =
-          body?.message ||
-          `Upload fehlgeschlagen (${res.status.toString()})`;
-        throw new Error(msg);
-      }
-
-      const data = await res.json();
-      console.log("CV upload response:", data);
-      setCvMessage("CV erfolgreich hochgeladen.");
-      setCvFile(null);
-      setHasUploadedCv(true);
-    } catch (err: any) {
-      console.error(err);
-      setCvError(err.message || "Fehler beim Upload der CV.");
-    } finally {
-      setCvUploading(false);
-    }
-  };
-
   if (loading) {
     return <div className="p-6">Lade Benutzerdaten...</div>;
   }
@@ -255,6 +185,7 @@ export default function CandidateDashboardPage() {
     (profile.first_name && profile.first_name.trim() !== "") ||
       (profile.last_name && profile.last_name.trim() !== "")
   );
+  const hasApplications = applications.length > 0;
 
   // Stepper-Klassen
   const stepBase =
@@ -353,25 +284,19 @@ export default function CandidateDashboardPage() {
               </div>
             </div>
 
-            {/* Schritt 2: CV */}
+            {/* Schritt 2: CV (jetzt allgemein „Unterlagen“) */}
             <div
               className={
                 stepBase +
                 " " +
-                (profileComplete && hasUploadedCv
-                  ? stepDone
-                  : !profileComplete
-                  ? stepUpcoming
-                  : stepCurrent)
+                (profileComplete ? stepCurrent : stepUpcoming)
               }
             >
               <div
                 className={
                   circleBase +
                   " " +
-                  (profileComplete && hasUploadedCv
-                    ? "bg-emerald-500 text-white"
-                    : profileComplete
+                  (profileComplete
                     ? "bg-sky-600 text-white"
                     : "bg-slate-300 text-slate-700")
                 }
@@ -379,9 +304,9 @@ export default function CandidateDashboardPage() {
                 2
               </div>
               <div>
-                <p className="font-semibold">CV hochladen</p>
+                <p className="font-semibold">Unterlagen hochladen</p>
                 <p className="text-[11px] text-slate-600">
-                  Lebenslauf als PDF/DOC hinterlegen.
+                  CV, Zertifikate & Referenzen im Profil hinterlegen.
                 </p>
               </div>
             </div>
@@ -391,17 +316,15 @@ export default function CandidateDashboardPage() {
               className={
                 stepBase +
                 " " +
-                (profileComplete && hasUploadedCv
-                  ? stepCurrent
-                  : stepUpcoming)
+                (profileComplete ? stepUpcoming : stepUpcoming)
               }
             >
               <div
                 className={
                   circleBase +
                   " " +
-                  (profileComplete && hasUploadedCv
-                    ? "bg-sky-600 text-white"
+                  (profileComplete
+                    ? "bg-slate-300 text-slate-700"
                     : "bg-slate-300 text-slate-700")
                 }
               >
@@ -420,14 +343,14 @@ export default function CandidateDashboardPage() {
               className={
                 stepBase +
                 " " +
-                (applications.length > 0 ? stepDone : stepUpcoming)
+                (hasApplications ? stepDone : stepUpcoming)
               }
             >
               <div
                 className={
                   circleBase +
                   " " +
-                  (applications.length > 0
+                  (hasApplications
                     ? "bg-emerald-500 text-white"
                     : "bg-slate-300 text-slate-700")
                 }
@@ -474,72 +397,7 @@ export default function CandidateDashboardPage() {
           </p>
         </section>
 
-        {/* CV-Upload */}
-        <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
-          <h2 className="text-lg font-semibold mb-2 text-slate-900">
-            CV / Lebenslauf hochladen
-          </h2>
-          <p className="text-xs text-slate-700 mb-3">
-            Hinweis: Bitte zuerst eine Datei auswählen (PDF, DOC, DOCX), dann
-            auf <span className="font-semibold">„CV hochladen“</span> klicken.
-          </p>
-
-          {cvMessage && (
-            <p className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-3 py-2 mb-2">
-              {cvMessage}
-            </p>
-          )}
-          {cvError && (
-            <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2 mb-2">
-              {cvError}
-            </p>
-          )}
-
-          <form onSubmit={handleCvUpload} className="space-y-3">
-            <input
-              id="cvInput"
-              type="file"
-              accept=".pdf,.doc,.docx"
-              onChange={handleCvChange}
-              className="hidden"
-            />
-
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <button
-                type="button"
-                onClick={() =>
-                  document.getElementById("cvInput")?.click()
-                }
-                className={secondaryButtonClass}
-              >
-                <Upload className="w-4 h-4" />
-                <span>{cvFile ? "Datei ändern" : "Datei auswählen"}</span>
-              </button>
-
-              {cvFile && (
-                <span className="text-xs text-slate-700 truncate max-w-[220px]">
-                  {cvFile.name}
-                </span>
-              )}
-            </div>
-
-            {cvUploading && (
-              <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
-                <div className="h-full w-1/2 bg-[#5BE1E6] animate-pulse" />
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={cvUploading || !cvFile}
-              className={primaryButtonClass}
-            >
-              {cvUploading ? "Upload läuft..." : "CV hochladen"}
-            </button>
-          </form>
-        </section>
-
-        {/* NEU: Dokumentenverwaltung */}
+        {/* Dokumentenverwaltung */}
         <DocumentManager />
 
         {/* Bewerbungen */}
