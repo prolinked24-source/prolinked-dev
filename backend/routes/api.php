@@ -16,7 +16,7 @@ use App\Http\Controllers\AdminCandidateController;
 |--------------------------------------------------------------------------
 |
 | Hier liegen alle API-Routen für die PROLINKED-Plattform.
-| Basis-Prefix wird in bootstrap/app.php mit "api/v1" gesetzt.
+| Der Prefix "api/v1" wird in bootstrap/app.php gesetzt.
 |
 */
 
@@ -49,10 +49,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
 
-        // Candidate: eigene Bewerbungen + CV-Upload
+        // Candidate: eigene Bewerbungen
         Route::get('/candidate/applications', [CandidateController::class, 'applications']);
 
-        // Candidate: Dokumentenmanagement (neu)
+        // Candidate: Dokumentenmanagement (mehrere Dokumenttypen)
         Route::get('/candidate/documents', [DocumentController::class, 'index']);
         Route::post('/candidate/documents', [DocumentController::class, 'upload']);
         Route::delete('/candidate/documents/{id}', [DocumentController::class, 'destroy']);
@@ -61,7 +61,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/employer/jobs', [EmployerController::class, 'jobs']);
         Route::post('/employer/jobs', [EmployerController::class, 'store']);
 
-        // Employer: Bewerbungen für einen Job sehen
+        // Employer: Bewerbungen für einen konkreten Job
         Route::get('/employer/jobs/{job}/applications', [ApplicationController::class, 'jobApplications']);
 
         // Candidate: auf Job bewerben
