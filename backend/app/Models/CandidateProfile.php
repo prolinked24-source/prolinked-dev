@@ -30,5 +30,10 @@ class CandidateProfile extends Model
     {
         return $this->hasMany(Application::class);
     }
+
+    public function candidateProfile()
+    {
+    return $this->hasOne(CandidateProfile::class, 'user_id');
+    }
 }
 
