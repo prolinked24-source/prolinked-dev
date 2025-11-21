@@ -67,6 +67,9 @@ Route::prefix('v1')->group(function () {
         // Candidate: auf Job bewerben
         Route::post('/jobs/{job}/apply', [ApplicationController::class, 'apply']);
 
+        // Admin: Kandidatenliste (neu)
+        Route::get('/admin/candidates', [AdminCandidateController::class, 'index']);
+
         // Admin: Kandidaten-Status setzen (Neu → Geprüft → Vermittelbar)
         Route::patch(
             '/admin/candidates/{candidateUserId}/status',
