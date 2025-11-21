@@ -138,23 +138,6 @@ export default function CandidateDashboardPage() {
     router.push("/login");
   };
 
-  const handleCvChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setCvError(null);
-    setCvMessage(null);
-    const file = e.target.files?.[0] || null;
-    setCvFile(file);
-  };
-
-  const handleCvUpload = async (e: FormEvent) => {
-    e.preventDefault();
-    setCvError(null);
-    setCvMessage(null);
-
-    if (!cvFile) {
-      setCvError("Bitte zuerst eine Datei auswählen.");
-      return;
-    }
-
     const token =
       typeof window !== "undefined"
         ? localStorage.getItem("prolinked_token")
