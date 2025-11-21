@@ -60,10 +60,6 @@ export default function CandidateDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [appsError, setAppsError] = useState<string | null>(null);
 
-  const [cvFile, setCvFile] = useState<File | null>(null);
-  const [cvUploading, setCvUploading] = useState(false);
-  const [cvMessage, setCvMessage] = useState<string | null>(null);
-  const [cvError, setCvError] = useState<string | null>(null);
 
   // simple „Status“-Flag für Stepper – nach CV-Upload
   const [hasUploadedCv, setHasUploadedCv] = useState(false);
