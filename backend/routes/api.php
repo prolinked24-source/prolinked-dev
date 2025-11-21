@@ -1,10 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\CandidateController;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CandidateController;
 use App\Http\Controllers\EmployerController;
-use App\Http\Controllers\JobController;
+use App\Http\Controllers\Api\JobController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ReviewController;
