@@ -51,7 +51,6 @@ Route::prefix('v1')->group(function () {
 
         // Candidate: eigene Bewerbungen + CV-Upload
         Route::get('/candidate/applications', [CandidateController::class, 'applications']);
-        Route::post('/candidate/cv', [CandidateController::class, 'uploadCv']);
 
         // Candidate: Dokumentenmanagement (neu)
         Route::get('/candidate/documents', [DocumentController::class, 'index']);
