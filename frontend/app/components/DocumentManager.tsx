@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, ChangeEvent } from "react";
-import { Upload, Trash2 } from "lucide-react";
+import { Upload, Trash2, FileText } from "lucide-react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
 
@@ -20,7 +20,7 @@ export default function DocumentManager() {
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  // 📌 Dokumente laden
+  // Dokumente laden
   useEffect(() => {
     const fetchDocs = async () => {
       try {
@@ -36,7 +36,7 @@ export default function DocumentManager() {
         const data = await res.json();
         setDocuments(data);
       } catch (err: any) {
-        setError(err.message);
+        setError("Dokumente konnten nicht geladen werden.");
       } finally {
         setLoading(false);
       }
@@ -45,25 +45,25 @@ export default function DocumentManager() {
     fetchDocs();
   }, []);
 
-  // 📌 Datei-Auswahl
+  // Datei auswählen
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     setError(null);
     setSuccess(null);
     setSelectedFile(e.target.files?.[0] || null);
   };
 
-  // 📌 Datei Upload
+  // Datei hochladen
   const handleUpload = async () => {
     if (!selectedFile) {
       setError("Bitte zuerst eine Datei auswählen.");
       return;
     }
 
-    setError(null);
-    setSuccess(null);
-
     try {
       setUploading(true);
+      setError(null);
+      setSuccess(null);
+
       const token = localStorage.getItem("prolinked_token");
       const formData = new FormData();
       formData.append("document", selectedFile);
@@ -74,22 +74,20 @@ export default function DocumentManager() {
         body: formData,
       });
 
-      if (!res.ok) {
-        throw new Error("Upload fehlgeschlagen.");
-      }
+      if (!res.ok) throw new Error("Upload fehlgeschlagen.");
 
       const newDoc = await res.json();
       setDocuments((prev) => [...prev, newDoc]);
       setSelectedFile(null);
       setSuccess("Dokument erfolgreich hochgeladen.");
-    } catch (err: any) {
-      setError(err.message);
+    } catch {
+      setError("Upload fehlgeschlagen. Bitte erneut versuchen.");
     } finally {
       setUploading(false);
     }
   };
 
-  // 📌 Dokument löschen
+  // Datei löschen
   const handleDelete = async (id: number) => {
     if (!confirm("Dokument wirklich löschen?")) return;
 
@@ -100,50 +98,56 @@ export default function DocumentManager() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!res.ok) throw new Error("Löschen fehlgeschlagen.");
+      if (!res.ok) throw new Error();
 
       setDocuments((prev) => prev.filter((doc) => doc.id !== id));
-    } catch (err: any) {
-      setError(err.message);
+      setSuccess("Dokument gelöscht.");
+    } catch {
+      setError("Löschen fehlgeschlagen.");
     }
   };
 
   return (
-    <div className="space-y-4">
-      {/* SUCCESS / ERROR */}
-      {success && (
-        <div className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded">
-          {success}
-        </div>
-      )}
+    <div className="space-y-5">
+      
+      {/* Erfolg/Fehler Box */}
       {error && (
-        <div className="text-sm text-red-800 bg-red-50 border border-red-200 px-3 py-2 rounded">
+        <div className="text-sm text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2">
           {error}
         </div>
       )}
+      {success && (
+        <div className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
+          {success}
+        </div>
+      )}
 
-      {/* UPLOAD SECTION */}
-      <div className="border border-slate-200 rounded-lg p-4 bg-white shadow-sm">
-        <h3 className="font-semibold text-slate-900 mb-2">Dokument hochladen</h3>
+      {/* Upload-Box */}
+      <div className="bg-white rounded-lg shadow border border-slate-200 p-5">
+        <h3 className="text-slate-900 font-semibold mb-2">
+          Dokument hochladen
+        </h3>
         <p className="text-xs text-slate-600 mb-3">
           Erlaubte Formate: PDF, JPG, PNG, DOC, DOCX
         </p>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <input
-            id="dmFile"
+            id="dmFileInput"
             type="file"
-            onChange={handleFileChange}
             className="hidden"
+            onChange={handleFileChange}
           />
 
           <button
             type="button"
-            onClick={() => document.getElementById("dmFile")?.click()}
+            onClick={() =>
+              document.getElementById("dmFileInput")?.click()
+            }
             className="flex items-center gap-2 px-4 py-2 rounded bg-sky-900 text-white hover:bg-sky-800 focus:ring-2 focus:ring-[#5BE1E6]"
           >
             <Upload className="w-4 h-4" />
-            {selectedFile ? "Andere Datei auswählen" : "Datei auswählen"}
+            {selectedFile ? "Datei ändern" : "Datei auswählen"}
           </button>
 
           {selectedFile && (
@@ -162,36 +166,28 @@ export default function DocumentManager() {
         </button>
       </div>
 
-      {/* DOCUMENT LIST */}
-      <div className="border border-slate-200 rounded-lg bg-white shadow-sm">
-        <h3 className="font-semibold text-slate-900 p-4 pb-2">Meine Dokumente</h3>
+      {/* Dokumentliste */}
+      <div className="bg-white rounded-lg shadow border border-slate-200">
+        <h3 className="text-slate-900 font-semibold p-5 pb-3">
+          Meine Dokumente
+        </h3>
 
         {loading ? (
-          <p className="text-sm text-slate-700 p-4">Lade Dokumente...</p>
+          <p className="text-sm text-slate-600 px-5 pb-5">
+            Lade Dokumente...
+          </p>
         ) : documents.length === 0 ? (
-          <p className="text-sm text-slate-600 p-4">Noch keine Dokumente vorhanden.</p>
+          <p className="text-sm text-slate-600 px-5 pb-5">
+            Noch keine Dokumente vorhanden.
+          </p>
         ) : (
           <ul className="divide-y divide-slate-200">
             {documents.map((doc) => (
               <li key={doc.id} className="flex items-center justify-between p-4">
-                <div>
-                  <p className="text-sm font-medium text-slate-900">{doc.file_name}</p>
-                  <p className="text-xs text-slate-500">
-                    Upload: {new Date(doc.created_at).toLocaleString()}
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => handleDelete(doc.id)}
-                  className="text-red-600 hover:text-red-800 focus:ring-2 focus:ring-red-300 p-1 rounded"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  );
-}
+                <div className="flex items-center gap-3">
+                  <FileText className="w-5 h-5 text-slate-500" />
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">
+                      {doc.file_name}
+                    </p>
+                    <p className
