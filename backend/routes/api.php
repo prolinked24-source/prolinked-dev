@@ -71,6 +71,10 @@ Route::prefix('v1')->group(function () {
         // Admin: Kandidatenliste (neu)
         Route::get('/admin/candidates', [AdminCandidateController::class, 'index']);
 
+        // Candidate: CV-Templates & Generator
+        Route::get('/candidate/cv-templates', [CvGeneratorController::class, 'templates']);
+        Route::post('/candidate/cv/generate', [CvGeneratorController::class, 'generate']);
+
         // Admin: Kandidaten-Status setzen (Neu → Geprüft → Vermittelbar)
         Route::patch(
             '/admin/candidates/{candidateUserId}/status',
