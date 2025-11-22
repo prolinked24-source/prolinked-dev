@@ -46,6 +46,11 @@ export default function CandidateDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [appsError, setAppsError] = useState<string | null>(null);
 
+  // für Vorlagen-Accordion
+  const [openTemplate, setOpenTemplate] = useState<"cv" | "cover" | null>(
+    null
+  );
+
   useEffect(() => {
     const run = async () => {
       try {
@@ -58,7 +63,7 @@ export default function CandidateDashboardPage() {
           return;
         }
 
-        // 1) Benutzer laden
+        // Benutzer laden
         setLoading(true);
         const meRes = await fetch(`${API_BASE_URL}/auth/me`, {
           headers: {
@@ -80,7 +85,7 @@ export default function CandidateDashboardPage() {
           return;
         }
 
-        // 2) Bewerbungen laden
+        // Bewerbungen laden
         setLoadingApps(true);
         const appsRes = await fetch(
           `${API_BASE_URL}/candidate/applications`,
@@ -206,7 +211,6 @@ export default function CandidateDashboardPage() {
       ? "text-sky-700 bg-sky-50 border-sky-200"
       : "text-slate-700 bg-slate-50 border-slate-200";
 
-  // Stepper-Klassen
   const stepBase =
     "flex-1 rounded-lg border px-3 py-2 flex items-center gap-2 text-xs md:text-sm";
   const stepDone = "border-emerald-400 bg-emerald-50 text-emerald-900";
@@ -219,6 +223,68 @@ export default function CandidateDashboardPage() {
   const hasApplications = applications.length > 0;
   const isReviewedOrEligible =
     profile.status === "reviewed" || profile.status === "eligible";
+
+  const cvTemplate = `Persönliche Daten
+Name: [Vorname Nachname]
+Adresse: [Straße, PLZ, Ort]
+Telefon: [+49 ...]
+E-Mail: [name@example.com]
+Geburtsdatum: [TT.MM.JJJJ]
+Geburtsort: [Ort]
+Staatsangehörigkeit: [z.B. Marokkanisch]
+
+Berufsziel
+[Kurze Beschreibung, z.B. „Pflegefachkraft mit internationaler Erfahrung – Einstieg in ein deutsches Krankenhaus“]
+
+Berufserfahrung
+[Zeitraum] – [Position], [Unternehmen], [Ort]
+- [wichtige Aufgabe/Verantwortung]
+- [wichtige Aufgabe/Erfolg]
+
+[Zeitraum] – [Position], [Unternehmen], [Ort]
+- [wichtige Aufgabe/Verantwortung]
+- [wichtige Aufgabe/Erfolg]
+
+Ausbildung
+[Zeitraum] – [Abschluss], [Schule/Universität], [Ort]
+[Zeitraum] – [Abschluss], [Berufsschule], [Ort]
+
+Sprachkenntnisse
+- [Sprache A]: [Niveau, z.B. Muttersprache]
+- [Deutsch]: [z.B. B1 / B2 – Zertifikat falls vorhanden]
+- [Englisch]: [Niveau]
+
+Fachliche Kompetenzen
+- [z.B. Pflege: Grund- und Behandlungspflege, Dokumentation, etc.]
+- [z.B. IT: MS Office, …]
+
+Soft Skills
+- Zuverlässig, teamorientiert, belastbar
+- Interkulturelle Kompetenz, Lernbereitschaft
+
+Referenzen
+[Optional: „Referenzen sind auf Wunsch verfügbar.“]`;
+
+  const coverTemplate = `Betreff: Bewerbung als [Stellenbezeichnung]
+
+Sehr geehrte Damen und Herren,
+
+mit großem Interesse habe ich Ihre Stellenausschreibung für die Position als [Stellenbezeichnung] gelesen. Aufgrund meiner Ausbildung und Berufserfahrung im Bereich [Fachbereich, z.B. Pflege, IT, Gastronomie] bin ich überzeugt, dass ich Ihr Team fachlich und menschlich sehr gut ergänzen kann.
+
+Derzeit arbeite ich als [aktuelle Position] bei [aktueller Arbeitgeber] in [Ort/Land]. Zu meinen Aufgaben gehören unter anderem:
+- [Aufgabe 1]
+- [Aufgabe 2]
+- [Aufgabe 3]
+
+Besonders reizt mich an der ausgeschriebenen Stelle, dass [z.B. „ich meine Erfahrung in einem internationalen Umfeld einbringen und gleichzeitig meine Deutschkenntnisse weiter verbessern kann“]. Ich bin belastbar, arbeite strukturiert und schätze eine offene, kollegiale Zusammenarbeit.
+
+Meine Deutschkenntnisse liegen derzeit auf dem Niveau [z.B. B1/B2] und ich arbeite kontinuierlich daran, diese weiter auszubauen. Eine langfristige berufliche Perspektive in Deutschland ist mein klares Ziel.
+
+Über die Einladung zu einem persönlichen Gespräch – gern auch zunächst per Video-Call – freue ich mich sehr.
+
+Mit freundlichen Grüßen
+
+[Vorname Nachname]`;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -432,6 +498,128 @@ export default function CandidateDashboardPage() {
           </p>
 
           <DocumentManager />
+        </section>
+
+        {/* Bewerbungs-Vorlagen */}
+        <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+          <h2 className="text-lg font-semibold mb-2 text-slate-900">
+            Bewerbungs-Vorlagen (DE)
+          </h2>
+          <p className="text-xs text-slate-700 mb-3">
+            Nutze diese Vorlagen als Ausgangspunkt und passe sie an deine
+            persönliche Situation an.
+          </p>
+
+          <div className="space-y-2">
+            {/* CV Vorlage */}
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() =>
+                  setOpenTemplate(openTemplate === "cv" ? null : "cv")
+                }
+                className="w-full flex items-center justify-between px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100"
+              >
+                <span className="font-medium text-slate-900">
+                  CV / Lebenslauf – Struktur & Beispieltexte
+                </span>
+                <span className="text-xs text-slate-500">
+                  {openTemplate === "cv" ? "Schließen" : "Anzeigen"}
+                </span>
+              </button>
+              {openTemplate === "cv" && (
+                <div className="p-3 bg-white border-t border-slate-200">
+                  <textarea
+                    readOnly
+                    value={cvTemplate}
+                    className="w-full h-56 text-xs font-mono text-slate-900 bg-slate-50 border border-slate-200 rounded p-2 focus:outline-none"
+                  />
+                  <p className="mt-2 text-[11px] text-slate-500">
+                    Tipp: Text markieren und in dein eigenes Dokument
+                    (Word, Google Docs, etc.) einfügen.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Anschreiben Vorlage */}
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <button
+                type="button"
+                onClick={() =>
+                  setOpenTemplate(openTemplate === "cover" ? null : "cover")
+                }
+                className="w-full flex items-center justify-between px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100"
+              >
+                <span className="font-medium text-slate-900">
+                  Anschreiben – Beispieltext
+                </span>
+                <span className="text-xs text-slate-500">
+                  {openTemplate === "cover" ? "Schließen" : "Anzeigen"}
+                </span>
+              </button>
+              {openTemplate === "cover" && (
+                <div className="p-3 bg-white border-t border-slate-200">
+                  <textarea
+                    readOnly
+                    value={coverTemplate}
+                    className="w-full h-52 text-xs font-mono text-slate-900 bg-slate-50 border border-slate-200 rounded p-2 focus:outline-none"
+                  />
+                  <p className="mt-2 text-[11px] text-slate-500">
+                    Tipp: Text anpassen (Name, Stelle, Arbeitgeber) und in
+                    deine eigene Datei übernehmen.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Video-Tutorials & Guides */}
+        <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+          <h2 className="text-lg font-semibold mb-2 text-slate-900">
+            Video-Tutorials & Schritt-für-Schritt-Guides
+          </h2>
+          <p className="text-xs text-slate-700 mb-3">
+            In diesem Bereich werden dir (vorerst als Übersicht) die wichtigsten
+            Schritte erklärt. Später können hier Video-Links oder integrierte
+            Lernmodule erscheinen.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+              <p className="font-semibold text-slate-900 mb-1">
+                Schritt 1: Profil & Dokumente
+              </p>
+              <ul className="list-disc list-inside text-slate-700 space-y-1">
+                <li>Profil vollständig ausfüllen</li>
+                <li>CV & Zeugnisse im Dokumenten-Center hochladen</li>
+                <li>Sprachzertifikate (falls vorhanden) ergänzen</li>
+              </ul>
+            </div>
+
+            <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+              <p className="font-semibold text-slate-900 mb-1">
+                Schritt 2: Interne Prüfung
+              </p>
+              <ul className="list-disc list-inside text-slate-700 space-y-1">
+                <li>PROLINKED-Team prüft deine Unterlagen</li>
+                <li>Status wechselt von „Neu“ → „Geprüft“ → „Vermittelbar“</li>
+                <li>Bei Rückfragen melden wir uns direkt bei dir</li>
+              </ul>
+            </div>
+
+            <div className="border border-slate-200 rounded-lg p-3 bg-slate-50">
+              <p className="font-semibold text-slate-900 mb-1">
+                Schritt 3: Jobs & Vermittlung
+              </p>
+              <ul className="list-disc list-inside text-slate-700 space-y-1">
+                <li>Jobs in deinem Zielland ansehen</li>
+                <li>Bewerben über PROLINKED oder direkte Empfehlung</li>
+                <li>Status deiner Bewerbungen im Dashboard verfolgen</li>
+              </ul>
+            </div>
+          </div>
         </section>
 
         {/* Bewerbungen */}
