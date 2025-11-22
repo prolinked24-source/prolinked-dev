@@ -185,7 +185,7 @@ export default function DocumentManager() {
       {/* Upload-Box */}
       <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-5">
         <h3 className="text-slate-900 font-semibold mb-2">
-          Dokument hochladen
+          Dokument Hochladen
         </h3>
         <p className="text-xs text-slate-600 mb-3">
           Wähle den Dokumententyp und lade passende Unterlagen hoch. <br />
