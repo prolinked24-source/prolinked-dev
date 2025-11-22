@@ -23,7 +23,6 @@ export default function DocumentManager() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState<string>("cv"); // Standard: CV
 
   // Dokumente laden
@@ -57,20 +56,8 @@ export default function DocumentManager() {
     fetchDocs();
   }, []);
 
-  // Datei auswählen
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setError(null);
-    setSuccess(null);
-    setSelectedFile(e.target.files?.[0] || null);
-  };
-
-  // Dokument hochladen
-  const handleUpload = async () => {
-    if (!selectedFile) {
-      setError("Bitte zuerst eine Datei auswählen.");
-      return;
-    }
-
+  // Hilfsfunktion: Upload eines einzelnen Files
+  const uploadFile = async (file: File) => {
     try {
       setUploading(true);
       setError(null);
@@ -83,8 +70,8 @@ export default function DocumentManager() {
       }
 
       const formData = new FormData();
-      // EXAKT wie im DocumentController::upload
-      formData.append("file", selectedFile);
+      // EXAKT wie in DocumentController::upload
+      formData.append("file", file);
       formData.append("type", documentType);
 
       const res = await fetch(`${API_BASE_URL}/candidate/documents`, {
@@ -99,19 +86,17 @@ export default function DocumentManager() {
           const body = await res.json();
           if (body?.message) msg = body.message;
         } catch {
-          // ignore
+          // ignore parse errors
         }
         throw new Error(msg);
       }
 
-      const body = await res.json() as {
+      const body = (await res.json()) as {
         message: string;
         document: DocumentItem;
       };
 
-      const newDoc = body.document;
-      setDocuments((prev) => [...prev, newDoc]);
-      setSelectedFile(null);
+      setDocuments((prev) => [...prev, body.document]);
       setSuccess(body.message || "Dokument erfolgreich hochgeladen.");
     } catch (err: any) {
       console.error(err);
@@ -119,6 +104,18 @@ export default function DocumentManager() {
     } finally {
       setUploading(false);
     }
+  };
+
+  // Datei-Auswahl → automatischer Upload
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // direkt uploaden
+    await uploadFile(file);
+
+    // Input resetten, damit man später dieselbe Datei erneut wählen kann
+    e.target.value = "";
   };
 
   // Dokument löschen
@@ -196,7 +193,7 @@ export default function DocumentManager() {
         </p>
 
         {/* Typ-Auswahl */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
           <div>
             <label className="block text-xs font-medium text-slate-800 mb-1">
               Dokumenttyp
@@ -214,40 +211,32 @@ export default function DocumentManager() {
           </div>
         </div>
 
-        {/* Datei-Auswahl + Upload */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <input
-            id="dmFileInput"
-            type="file"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-
-          <button
-            type="button"
-            onClick={() =>
-              document.getElementById("dmFileInput")?.click()
-            }
-            className="flex items-center gap-2 px-4 py-2 rounded bg-sky-900 text-white hover:bg-sky-800 focus:ring-2 focus:ring-[#5BE1E6]"
-          >
-            <Upload className="w-4 h-4" />
-            {selectedFile ? "Datei ändern" : "Datei auswählen"}
-          </button>
-
-          {selectedFile && (
-            <span className="text-xs text-slate-700 truncate max-w-[260px]">
-              {selectedFile.name}
-            </span>
-          )}
-        </div>
+        {/* Datei-Input (hidden) + Button */}
+        <input
+          id="dmFileInput"
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+          className="hidden"
+          onChange={handleFileChange}
+        />
 
         <button
-          onClick={handleUpload}
-          disabled={uploading || !selectedFile}
-          className="mt-3 px-4 py-2 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 disabled:opacity-50 focus:ring-2 focus:ring-[#5BE1E6]"
+          type="button"
+          onClick={() =>
+            document.getElementById("dmFileInput")?.click()
+          }
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-sky-900 hover:bg-sky-800 focus:ring-2 focus:ring-[#5BE1E6]"
         >
-          {uploading ? "Upload läuft..." : "Dokument hochladen"}
+          <Upload className="w-4 h-4" />
+          Datei hochladen
         </button>
+
+        {/* Fortschrittsbalken */}
+        {uploading && (
+          <div className="w-full h-1 bg-slate-200 rounded-full mt-3 overflow-hidden">
+            <div className="h-full w-1/2 bg-[#5BE1E6] animate-pulse" />
+          </div>
+        )}
       </div>
 
       {/* Dokumentliste */}
