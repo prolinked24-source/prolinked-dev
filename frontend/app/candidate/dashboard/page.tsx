@@ -12,6 +12,8 @@ interface CandidateProfile {
   country_of_origin?: string | null;
   target_country?: string | null;
   status?: "new" | "reviewed" | "eligible" | string;
+  headline?: string | null;
+  summary?: string | null;
 }
 
 interface User {
@@ -36,6 +38,16 @@ interface Application {
   };
 }
 
+interface CvTemplate {
+  id: number;
+  name: string;
+  slug: string;
+  industry: string | null;
+  language: string;
+  layout_type: string;
+  description?: string | null;
+}
+
 export default function CandidateDashboardPage() {
   const router = useRouter();
 
@@ -46,10 +58,19 @@ export default function CandidateDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [appsError, setAppsError] = useState<string | null>(null);
 
-  // für Vorlagen-Accordion
-  const [openTemplate, setOpenTemplate] = useState<"cv" | "cover" | null>(
+  // CV-Generator-States
+  const [cvIndustry, setCvIndustry] = useState<string>("");
+  const [cvTemplates, setCvTemplates] = useState<CvTemplate[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [templatesError, setTemplatesError] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(
     null
   );
+  const [headlineOverride, setHeadlineOverride] = useState<string>("");
+  const [summaryOverride, setSummaryOverride] = useState<string>("");
+  const [generatingCv, setGeneratingCv] = useState(false);
+  const [generatorMessage, setGeneratorMessage] = useState<string | null>(null);
+  const [generatorError, setGeneratorError] = useState<string | null>(null);
 
   useEffect(() => {
     const run = async () => {
@@ -119,12 +140,133 @@ export default function CandidateDashboardPage() {
     run();
   }, [router]);
 
+  // CV-Templates laden, wenn Branche gewählt wurde
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      if (!cvIndustry) {
+        setCvTemplates([]);
+        setTemplatesError(null);
+        setSelectedTemplateId(null);
+        return;
+      }
+
+      try {
+        if (typeof window === "undefined") return;
+        const token = localStorage.getItem("prolinked_token");
+        if (!token) {
+          setTemplatesError("Nicht eingeloggt. Bitte neu anmelden.");
+          return;
+        }
+
+        setTemplatesLoading(true);
+        setTemplatesError(null);
+        setCvTemplates([]);
+        setSelectedTemplateId(null);
+
+        const url = `${API_BASE_URL}/candidate/cv-templates?industry=${encodeURIComponent(
+          cvIndustry
+        )}&language=de`;
+
+        const res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error("Fehler beim Laden der CV-Templates.");
+        }
+
+        const data = (await res.json()) as CvTemplate[];
+        setCvTemplates(data);
+      } catch (err: any) {
+        console.error(err);
+        setTemplatesError(
+          err.message || "Fehler beim Laden der CV-Templates."
+        );
+      } finally {
+        setTemplatesLoading(false);
+      }
+    };
+
+    fetchTemplates();
+  }, [cvIndustry]);
+
   const handleLogout = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("prolinked_token");
       localStorage.removeItem("prolinked_role");
     }
     router.push("/login");
+  };
+
+  const handleGenerateCv = async () => {
+    setGeneratorError(null);
+    setGeneratorMessage(null);
+
+    if (!selectedTemplateId) {
+      setGeneratorError("Bitte zuerst ein CV-Template auswählen.");
+      return;
+    }
+
+    try {
+      if (typeof window === "undefined") return;
+      const token = localStorage.getItem("prolinked_token");
+      if (!token) {
+        setGeneratorError("Nicht eingeloggt. Bitte neu anmelden.");
+        return;
+      }
+
+      setGeneratingCv(true);
+
+      const payload: Record<string, any> = {
+        template_id: selectedTemplateId,
+      };
+
+      if (headlineOverride.trim() !== "") {
+        payload.headline = headlineOverride.trim();
+      }
+
+      if (summaryOverride.trim() !== "") {
+        payload.summary = summaryOverride.trim();
+      }
+
+      const res = await fetch(`${API_BASE_URL}/candidate/cv/generate`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        let msg = "CV konnte nicht generiert werden.";
+        try {
+          const body = await res.json();
+          if (body?.message) msg = body.message;
+        } catch {
+          // ignore
+        }
+        throw new Error(msg);
+      }
+
+      const body = await res.json();
+      setGeneratorMessage(
+        body?.message ||
+          "CV wurde erfolgreich generiert und im Dokumenten-Center gespeichert."
+      );
+    } catch (err: any) {
+      console.error(err);
+      setGeneratorError(
+        err.message ||
+          "Fehler bei der CV-Generierung. Bitte später erneut versuchen."
+      );
+    } finally {
+      setGeneratingCv(false);
+    }
   };
 
   if (loading && !user && !error) {
@@ -223,68 +365,6 @@ export default function CandidateDashboardPage() {
   const hasApplications = applications.length > 0;
   const isReviewedOrEligible =
     profile.status === "reviewed" || profile.status === "eligible";
-
-  const cvTemplate = `Persönliche Daten
-Name: [Vorname Nachname]
-Adresse: [Straße, PLZ, Ort]
-Telefon: [+49 ...]
-E-Mail: [name@example.com]
-Geburtsdatum: [TT.MM.JJJJ]
-Geburtsort: [Ort]
-Staatsangehörigkeit: [z.B. Marokkanisch]
-
-Berufsziel
-[Kurze Beschreibung, z.B. „Pflegefachkraft mit internationaler Erfahrung – Einstieg in ein deutsches Krankenhaus“]
-
-Berufserfahrung
-[Zeitraum] – [Position], [Unternehmen], [Ort]
-- [wichtige Aufgabe/Verantwortung]
-- [wichtige Aufgabe/Erfolg]
-
-[Zeitraum] – [Position], [Unternehmen], [Ort]
-- [wichtige Aufgabe/Verantwortung]
-- [wichtige Aufgabe/Erfolg]
-
-Ausbildung
-[Zeitraum] – [Abschluss], [Schule/Universität], [Ort]
-[Zeitraum] – [Abschluss], [Berufsschule], [Ort]
-
-Sprachkenntnisse
-- [Sprache A]: [Niveau, z.B. Muttersprache]
-- [Deutsch]: [z.B. B1 / B2 – Zertifikat falls vorhanden]
-- [Englisch]: [Niveau]
-
-Fachliche Kompetenzen
-- [z.B. Pflege: Grund- und Behandlungspflege, Dokumentation, etc.]
-- [z.B. IT: MS Office, …]
-
-Soft Skills
-- Zuverlässig, teamorientiert, belastbar
-- Interkulturelle Kompetenz, Lernbereitschaft
-
-Referenzen
-[Optional: „Referenzen sind auf Wunsch verfügbar.“]`;
-
-  const coverTemplate = `Betreff: Bewerbung als [Stellenbezeichnung]
-
-Sehr geehrte Damen und Herren,
-
-mit großem Interesse habe ich Ihre Stellenausschreibung für die Position als [Stellenbezeichnung] gelesen. Aufgrund meiner Ausbildung und Berufserfahrung im Bereich [Fachbereich, z.B. Pflege, IT, Gastronomie] bin ich überzeugt, dass ich Ihr Team fachlich und menschlich sehr gut ergänzen kann.
-
-Derzeit arbeite ich als [aktuelle Position] bei [aktueller Arbeitgeber] in [Ort/Land]. Zu meinen Aufgaben gehören unter anderem:
-- [Aufgabe 1]
-- [Aufgabe 2]
-- [Aufgabe 3]
-
-Besonders reizt mich an der ausgeschriebenen Stelle, dass [z.B. „ich meine Erfahrung in einem internationalen Umfeld einbringen und gleichzeitig meine Deutschkenntnisse weiter verbessern kann“]. Ich bin belastbar, arbeite strukturiert und schätze eine offene, kollegiale Zusammenarbeit.
-
-Meine Deutschkenntnisse liegen derzeit auf dem Niveau [z.B. B1/B2] und ich arbeite kontinuierlich daran, diese weiter auszubauen. Eine langfristige berufliche Perspektive in Deutschland ist mein klares Ziel.
-
-Über die Einladung zu einem persönlichen Gespräch – gern auch zunächst per Video-Call – freue ich mich sehr.
-
-Mit freundlichen Grüßen
-
-[Vorname Nachname]`;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -493,86 +573,161 @@ Mit freundlichen Grüßen
           <p className="text-xs text-slate-700 mb-3">
             Lade hier deine{" "}
             <span className="font-semibold">CVs, Zeugnisse, Zertifikate</span>{" "}
-            und andere relevante Unterlagen hoch. Diese Dokumente werden für
-            die interne Prüfung und spätere Vermittlung genutzt.
+            und andere relevante Unterlagen hoch. Diese Dokumente werden für die
+            interne Prüfung und spätere Vermittlung genutzt.
           </p>
 
           <DocumentManager />
         </section>
 
-        {/* Bewerbungs-Vorlagen */}
+        {/* CV-Generator */}
         <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
           <h2 className="text-lg font-semibold mb-2 text-slate-900">
-            Bewerbungs-Vorlagen (DE)
+            CV-Generator
           </h2>
           <p className="text-xs text-slate-700 mb-3">
-            Nutze diese Vorlagen als Ausgangspunkt und passe sie an deine
-            persönliche Situation an.
+            Wähle deine Branche, ein Layout-Template und generiere automatisch
+            einen CV als PDF. Der fertige CV wird im Dokumenten-Center
+            gespeichert und kann später bei Bewerbungen genutzt werden.
           </p>
 
-          <div className="space-y-2">
-            {/* CV Vorlage */}
-            <div className="border border-slate-200 rounded-lg overflow-hidden">
-              <button
-                type="button"
-                onClick={() =>
-                  setOpenTemplate(openTemplate === "cv" ? null : "cv")
-                }
-                className="w-full flex items-center justify-between px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100"
+          {generatorError && (
+            <div className="text-sm text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2 mb-3">
+              {generatorError}
+            </div>
+          )}
+          {generatorMessage && (
+            <div className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-3 py-2 mb-3">
+              {generatorMessage}
+            </div>
+          )}
+
+          {/* Branche & Templates */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="md:col-span-1">
+              <label className="block text-xs font-medium text-slate-800 mb-1">
+                Branche
+              </label>
+              <select
+                value={cvIndustry}
+                onChange={(e) => setCvIndustry(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]"
               >
-                <span className="font-medium text-slate-900">
-                  CV / Lebenslauf – Struktur & Beispieltexte
-                </span>
-                <span className="text-xs text-slate-500">
-                  {openTemplate === "cv" ? "Schließen" : "Anzeigen"}
-                </span>
-              </button>
-              {openTemplate === "cv" && (
-                <div className="p-3 bg-white border-t border-slate-200">
-                  <textarea
-                    readOnly
-                    value={cvTemplate}
-                    className="w-full h-56 text-xs font-mono text-slate-900 bg-slate-50 border border-slate-200 rounded p-2 focus:outline-none"
-                  />
-                  <p className="mt-2 text-[11px] text-slate-500">
-                    Tipp: Text markieren und in dein eigenes Dokument
-                    (Word, Google Docs, etc.) einfügen.
-                  </p>
-                </div>
-              )}
+                <option value="">Bitte auswählen</option>
+                <option value="nursing">Pflege / Medizin</option>
+                <option value="it">IT / Tech</option>
+                <option value="hospitality">Gastronomie / Hotel</option>
+                <option value="logistics">Logistik / Transport</option>
+                <option value="general">Allgemein</option>
+              </select>
+              <p className="text-[11px] text-slate-500 mt-1">
+                Die Auswahl hilft, ein passendes Layout für dein Profil zu
+                finden.
+              </p>
             </div>
 
-            {/* Anschreiben Vorlage */}
-            <div className="border border-slate-200 rounded-lg overflow-hidden">
-              <button
-                type="button"
-                onClick={() =>
-                  setOpenTemplate(openTemplate === "cover" ? null : "cover")
-                }
-                className="w-full flex items-center justify-between px-3 py-2 text-sm bg-slate-50 hover:bg-slate-100"
-              >
-                <span className="font-medium text-slate-900">
-                  Anschreiben – Beispieltext
+            {/* Template-Auswahl */}
+            <div className="md:col-span-2">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium text-slate-800">
+                  Verfügbare Templates
                 </span>
-                <span className="text-xs text-slate-500">
-                  {openTemplate === "cover" ? "Schließen" : "Anzeigen"}
-                </span>
-              </button>
-              {openTemplate === "cover" && (
-                <div className="p-3 bg-white border-t border-slate-200">
-                  <textarea
-                    readOnly
-                    value={coverTemplate}
-                    className="w-full h-52 text-xs font-mono text-slate-900 bg-slate-50 border border-slate-200 rounded p-2 focus:outline-none"
-                  />
-                  <p className="mt-2 text-[11px] text-slate-500">
-                    Tipp: Text anpassen (Name, Stelle, Arbeitgeber) und in
-                    deine eigene Datei übernehmen.
-                  </p>
+                {templatesLoading && (
+                  <span className="text-[11px] text-slate-500">
+                    Lade Templates...
+                  </span>
+                )}
+              </div>
+
+              {templatesError && (
+                <div className="text-[11px] text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1 mb-1">
+                  {templatesError}
                 </div>
               )}
+
+              {!templatesLoading && cvIndustry && cvTemplates.length === 0 && !templatesError && (
+                <p className="text-[11px] text-slate-500">
+                  Für diese Branche sind aktuell noch keine Templates hinterlegt.
+                </p>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                {cvTemplates.map((tpl) => {
+                  const selected = tpl.id === selectedTemplateId;
+                  return (
+                    <button
+                      key={tpl.id}
+                      type="button"
+                      onClick={() => setSelectedTemplateId(tpl.id)}
+                      className={
+                        "text-left rounded-lg border px-3 py-2 text-xs transition " +
+                        (selected
+                          ? "border-sky-500 bg-sky-50"
+                          : "border-slate-200 bg-slate-50 hover:border-sky-300")
+                      }
+                    >
+                      <div className="font-semibold text-slate-900">
+                        {tpl.name}
+                      </div>
+                      {tpl.description && (
+                        <div className="text-[11px] text-slate-600 mt-0.5">
+                          {tpl.description}
+                        </div>
+                      )}
+                      <div className="text-[10px] text-slate-400 mt-1">
+                        Layout: {tpl.layout_type} · Sprache:{" "}
+                        {tpl.language.toUpperCase()}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
+
+          {/* Optionale Overrides */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-xs font-medium text-slate-800 mb-1">
+                Überschrift / Berufsziel (optional)
+              </label>
+              <input
+                type="text"
+                value={headlineOverride}
+                onChange={(e) => setHeadlineOverride(e.target.value)}
+                placeholder="z.B. Pflegefachkraft mit internationaler Erfahrung"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]"
+              />
+              <p className="text-[11px] text-slate-500 mt-1">
+                Wenn leer, nutzt PROLINKED dein Profil bzw. eine Standardzeile.
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-800 mb-1">
+                Kurzprofil / Zusammenfassung (optional)
+              </label>
+              <textarea
+                value={summaryOverride}
+                onChange={(e) => setSummaryOverride(e.target.value)}
+                rows={3}
+                placeholder="Kurze Beschreibung deines Profils (Stärken, Erfahrung, Ziel in Deutschland)."
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]"
+              />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGenerateCv}
+            disabled={generatingCv || !selectedTemplateId}
+            className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6]"
+          >
+            {generatingCv ? "CV wird generiert..." : "CV als PDF generieren"}
+          </button>
+          <p className="text-[11px] text-slate-500 mt-2">
+            Der generierte CV erscheint automatisch im Dokumenten-Center (Typ:
+            CV) und kann später bei Bewerbungen ausgewählt werden.
+          </p>
         </section>
 
         {/* Video-Tutorials & Guides */}
