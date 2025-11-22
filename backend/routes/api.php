@@ -9,6 +9,7 @@ use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\AdminCandidateController;
+use App\Http\Controllers\CvGeneratorController;
 
 /*
 |--------------------------------------------------------------------------
