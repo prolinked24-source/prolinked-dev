@@ -31,10 +31,9 @@ export default function AdminCandidatesPage() {
   const [error, setError] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<AdminCandidate[]>([]);
   const [savingStatusId, setSavingStatusId] = useState<number | null>(null);
-
   const [token, setToken] = useState<string | null>(null);
 
-  // Token laden
+  // Token aus localStorage laden
   useEffect(() => {
     if (typeof window !== "undefined") {
       const t = localStorage.getItem("prolinked_token");
@@ -42,11 +41,9 @@ export default function AdminCandidatesPage() {
     }
   }, []);
 
-  // Admin-Check + Kandidaten laden
+  // Admin-Check + Kandidatenliste laden
   useEffect(() => {
     if (!token) {
-      if (!authChecking) return;
-      // wenn kein Token -> zum Login
       setAuthChecking(false);
       router.push("/login");
       return;
@@ -57,7 +54,7 @@ export default function AdminCandidatesPage() {
         setAuthChecking(true);
         setError(null);
 
-        // 1) User holen
+        // 1) /auth/me prüfen
         const meRes = await fetch(`${API_BASE_URL}/auth/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -75,7 +72,7 @@ export default function AdminCandidatesPage() {
           throw new Error("Nur Admins haben Zugriff auf diese Seite.");
         }
 
-        // 2) Kandidatenliste holen
+        // 2) Kandidatenliste laden
         setLoading(true);
         const res = await fetch(`${API_BASE_URL}/admin/candidates`, {
           headers: {
