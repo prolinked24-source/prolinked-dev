@@ -10,6 +10,7 @@ interface DocumentItem {
   file_name: string;
   file_path: string;
   created_at: string;
+  type?: string | null; // optional, falls vom Backend geliefert
 }
 
 export default function DocumentManager() {
@@ -19,6 +20,7 @@ export default function DocumentManager() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [documentType, setDocumentType] = useState<string>("cv"); // Standard: CV
 
   // Dokumente laden
   useEffect(() => {
@@ -35,7 +37,8 @@ export default function DocumentManager() {
 
         const data = await res.json();
         setDocuments(data);
-      } catch (err: any) {
+      } catch (err) {
+        console.error(err);
         setError("Dokumente konnten nicht geladen werden.");
       } finally {
         setLoading(false);
@@ -52,7 +55,7 @@ export default function DocumentManager() {
     setSelectedFile(e.target.files?.[0] || null);
   };
 
-  // Datei hochladen
+  // Dokument hochladen
   const handleUpload = async () => {
     if (!selectedFile) {
       setError("Bitte zuerst eine Datei auswählen.");
@@ -65,8 +68,18 @@ export default function DocumentManager() {
       setSuccess(null);
 
       const token = localStorage.getItem("prolinked_token");
+      if (!token) {
+        setError("Nicht eingeloggt. Bitte neu anmelden.");
+        return;
+      }
+
       const formData = new FormData();
-      formData.append("document", selectedFile);
+
+      // 🔴 WICHTIG: Diese Feldnamen müssen zu deinem Laravel-Controller passen!
+      // In DocumentController::upload sollte z.B. stehen:
+      // $request->validate(['file' => 'required|file', 'type' => 'nullable|string']);
+      formData.append("file", selectedFile);   // <– wenn Backend "document" erwartet: auf "document" ändern
+      formData.append("type", documentType);   // <– wenn Backend "document_type" erwartet: anpassen
 
       const res = await fetch(`${API_BASE_URL}/candidate/documents`, {
         method: "POST",
@@ -74,43 +87,60 @@ export default function DocumentManager() {
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Upload fehlgeschlagen.");
+      if (!res.ok) {
+        let msg = "Upload fehlgeschlagen. Bitte erneut versuchen.";
+        try {
+          const body = await res.json();
+          if (body?.message) msg = body.message;
+        } catch {
+          // ignore JSON parse
+        }
+        throw new Error(msg);
+      }
 
       const newDoc = await res.json();
       setDocuments((prev) => [...prev, newDoc]);
       setSelectedFile(null);
       setSuccess("Dokument erfolgreich hochgeladen.");
-    } catch {
-      setError("Upload fehlgeschlagen. Bitte erneut versuchen.");
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Upload fehlgeschlagen. Bitte erneut versuchen.");
     } finally {
       setUploading(false);
     }
   };
 
-  // Datei löschen
+  // Dokument löschen
   const handleDelete = async (id: number) => {
     if (!confirm("Dokument wirklich löschen?")) return;
 
     try {
       const token = localStorage.getItem("prolinked_token");
+      if (!token) {
+        setError("Nicht eingeloggt.");
+        return;
+      }
+
       const res = await fetch(`${API_BASE_URL}/candidate/documents/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        throw new Error("Löschen fehlgeschlagen.");
+      }
 
       setDocuments((prev) => prev.filter((doc) => doc.id !== id));
       setSuccess("Dokument gelöscht.");
-    } catch {
-      setError("Löschen fehlgeschlagen.");
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Löschen fehlgeschlagen.");
     }
   };
 
   return (
     <div className="space-y-5">
-      
-      {/* Erfolg/Fehler Box */}
+      {/* Erfolg / Fehler */}
       {error && (
         <div className="text-sm text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2">
           {error}
@@ -128,9 +158,30 @@ export default function DocumentManager() {
           Dokument hochladen
         </h3>
         <p className="text-xs text-slate-600 mb-3">
+          Wähle den Dokumententyp und lade passende Unterlagen hoch. <br />
           Erlaubte Formate: PDF, JPG, PNG, DOC, DOCX
         </p>
 
+        {/* Typ-Auswahl */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <div>
+            <label className="block text-xs font-medium text-slate-800 mb-1">
+              Dokumenttyp
+            </label>
+            <select
+              value={documentType}
+              onChange={(e) => setDocumentType(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]"
+            >
+              <option value="cv">CV / Lebenslauf</option>
+              <option value="certificate">Zeugnis / Zertifikat</option>
+              <option value="reference">Referenz / Empfehlung</option>
+              <option value="other">Sonstiges Dokument</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Datei-Auswahl + Upload */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <input
             id="dmFileInput"
@@ -151,7 +202,7 @@ export default function DocumentManager() {
           </button>
 
           {selectedFile && (
-            <span className="text-xs text-slate-700 truncate max-w-[220px]">
+            <span className="text-xs text-slate-700 truncate max-w-[260px]">
               {selectedFile.name}
             </span>
           )}
@@ -183,7 +234,10 @@ export default function DocumentManager() {
         ) : (
           <ul className="divide-y divide-slate-200">
             {documents.map((doc) => (
-              <li key={doc.id} className="flex items-center justify-between p-4">
+              <li
+                key={doc.id}
+                className="flex items-center justify-between p-4"
+              >
                 <div className="flex items-center gap-3">
                   <FileText className="w-5 h-5 text-slate-500" />
                   <div>
@@ -191,6 +245,11 @@ export default function DocumentManager() {
                       {doc.file_name}
                     </p>
                     <p className="text-xs text-slate-500">
+                      {doc.type && (
+                        <span className="mr-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700 border border-slate-200 uppercase">
+                          {doc.type}
+                        </span>
+                      )}
                       Upload: {new Date(doc.created_at).toLocaleString()}
                     </p>
                   </div>
