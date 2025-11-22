@@ -58,7 +58,6 @@ export default function LoginPage() {
         localStorage.setItem("prolinked_role", data.user.role);
       }
 
-      // Rolle robust auswerten (egal ob "Admin", "admin", "ADMIN")
       const role = (data.user.role || "").toLowerCase();
 
       if (role === "candidate") {
@@ -68,7 +67,6 @@ export default function LoginPage() {
       } else if (role === "admin") {
         router.push("/admin/candidates");
       } else {
-        // Fallback – falls Rolle unbekannt
         router.push("/");
       }
     } catch (err: any) {
@@ -103,7 +101,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">
+            <label className="block text-xs font-medium text-slate-800 mb-1">
               E-Mail
             </label>
             <input
@@ -117,8 +115,8 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">
-            Passwort
+            <label className="block text-xs font-medium text-slate-800 mb-1">
+              Passwort
             </label>
             <input
               type="password"
