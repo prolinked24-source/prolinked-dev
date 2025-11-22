@@ -58,15 +58,17 @@ export default function LoginPage() {
         localStorage.setItem("prolinked_role", data.user.role);
       }
 
-      // 🔁 Rolle auswerten und weiterleiten
-      if (data.user.role === "candidate") {
+      // Rolle robust auswerten (egal ob "Admin", "admin", "ADMIN")
+      const role = (data.user.role || "").toLowerCase();
+
+      if (role === "candidate") {
         router.push("/candidate/dashboard");
-      } else if (data.user.role === "employer") {
+      } else if (role === "employer") {
         router.push("/employer/dashboard");
-      } else if (data.user.role === "admin") {
+      } else if (role === "admin") {
         router.push("/admin/candidates");
       } else {
-        // Fallback – falls irgendwann andere Rollen kommen
+        // Fallback – falls Rolle unbekannt
         router.push("/");
       }
     } catch (err: any) {
@@ -101,7 +103,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-slate-1000 mb-1">
+            <label className="block text-xs font-medium text-slate-700 mb-1">
               E-Mail
             </label>
             <input
@@ -116,7 +118,7 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-xs font-medium text-slate-700 mb-1">
-              Passwort
+            Passwort
             </label>
             <input
               type="password"
@@ -137,19 +139,19 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-4 text-center text-[11px] text-slate-200 space-y-1">
+        <div className="mt-4 text-center text-[11px] text-slate-600 space-y-1">
           <p>
             Noch kein Account?{" "}
             <a
               href="/register/candidate"
-              className="text-[#5BE1E6] hover:underline"
+              className="text-sky-700 hover:underline"
             >
               Kandidat registrieren
             </a>{" "}
             ·{" "}
             <a
               href="/register/employer"
-              className="text-[#5BE1E6] hover:underline"
+              className="text-sky-700 hover:underline"
             >
               Arbeitgeber registrieren
             </a>
