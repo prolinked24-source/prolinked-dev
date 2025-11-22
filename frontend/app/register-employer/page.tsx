@@ -5,39 +5,25 @@ import { useRouter } from "next/navigation";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
 
-const inputClass =
-  "w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm " +
-  "text-slate-900 placeholder-slate-500 " +
-  "focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]";
-
-const primaryButtonClass =
-  "w-full rounded-lg bg-sky-800 text-white text-sm font-medium px-3 py-2 " +
-  "hover:bg-sky-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#5BE1E6] " +
-  "disabled:opacity-50 transition";
-
-export default function RegisterEmployerPage() {
+export default function EmployerRegisterPage() {
   const router = useRouter();
 
   const [companyName, setCompanyName] = useState("");
+  const [companyWebsite, setCompanyWebsite] = useState("");
+  const [industry, setIndustry] = useState("");
   const [contactName, setContactName] = useState("");
-  const [country, setCountry] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
 
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setMessage(null);
-
-    if (!companyName || !email || !password || !passwordConfirmation) {
-      setError("Bitte alle Pflichtfelder ausfüllen.");
-      return;
-    }
 
     if (password !== passwordConfirmation) {
       setError("Passwörter stimmen nicht überein.");
@@ -47,169 +33,177 @@ export default function RegisterEmployerPage() {
     try {
       setLoading(true);
 
-      const res = await fetch(`${API_BASE_URL}/auth/register-employer`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          company_name: companyName,
-          contact_name: contactName,
-          country,
-          email,
-          password,
-          password_confirmation: passwordConfirmation,
-        }),
-      });
+      const body = {
+        company_name: companyName.trim(),
+        company_website: companyWebsite.trim() || null,
+        industry: industry.trim() || null,
+        contact_name: contactName.trim() || null,
+        email: email.trim(),
+        password,
+        password_confirmation: passwordConfirmation,
+      };
+
+      const res = await fetch(
+        `${API_BASE_URL}/auth/register-employer`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(body),
+        }
+      );
 
       if (!res.ok) {
-        let body: any = null;
+        let rBody: any = null;
         try {
-          body = await res.json();
+          rBody = await res.json();
         } catch {
           // ignore
         }
         const msg =
-          body?.message ||
+          rBody?.message ||
           `Registrierung fehlgeschlagen (${res.status.toString()})`;
         throw new Error(msg);
       }
 
       setMessage(
-        "Arbeitgeber erfolgreich registriert. Du kannst dich jetzt einloggen."
+        "Registrierung erfolgreich. Sie können sich jetzt einloggen."
       );
+      setTimeout(() => {
+        router.push("/login");
+      }, 1200);
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "Registrierung fehlgeschlagen.");
+      setError(err.message || "Unbekannter Fehler bei der Registrierung.");
     } finally {
       setLoading(false);
     }
   };
 
-  const gotoLogin = () => {
-    router.push("/login");
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
-      <div className="w-full max-w-lg bg-white/95 rounded-2xl shadow-xl p-8">
-        {/* Brand / Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-bold tracking-wide text-sky-900">
-                PROLINKED
-              </span>
-            </div>
-            <p className="text-[11px] uppercase tracking-wide text-slate-500">
-              Talent & Employer Portal
-            </p>
-            <div
-              className="mt-2 h-0.5 w-20 rounded-full"
-              style={{ backgroundColor: "#5BE1E6" }}
-            />
-          </div>
-          <span className="text-[11px] px-2 py-1 rounded-full bg-amber-50 text-amber-700 border"
-                style={{ borderColor: "#5BE1E6" }}>
-            Employer
-          </span>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-900 to-sky-950">
+      <div className="w-full max-w-lg bg-white/95 border border-slate-700/40 rounded-2xl shadow-xl p-6">
+        <div className="mb-4 text-center">
+          <h1 className="text-xl font-semibold text-slate-900">
+            Arbeitgeber registrieren
+          </h1>
+          <p className="text-xs text-slate-600 mt-1">
+            Erstellen Sie Ihren PROLINKED-Zugang, um Stellenanzeigen zu
+            veröffentlichen und Kandidaten zu verwalten.
+          </p>
+          <div
+            className="mt-2 h-0.5 w-16 mx-auto rounded-full"
+            style={{ backgroundColor: "#5BE1E6" }}
+          />
         </div>
 
-        <h1 className="text-lg font-semibold mb-1 text-slate-900">
-          Arbeitgeber-Account erstellen
-        </h1>
-        <p className="text-xs mb-4 text-slate-600">
-          Erstelle einen Arbeitgeber-Account, um Stellenanzeigen zu veröffentlichen
-          und Bewerbungen zu verwalten.
-        </p>
-
-        {error && (
-          <div className="mb-4 text-sm text-red-800 border border-red-200 bg-red-50 rounded px-3 py-2">
-            {error}
-          </div>
-        )}
         {message && (
-          <div className="mb-4 text-sm text-emerald-800 border border-emerald-200 bg-emerald-50 rounded px-3 py-2">
+          <p className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-3 py-2 mb-3">
             {message}
-          </div>
+          </p>
+        )}
+        {error && (
+          <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2 mb-3">
+            {error}
+          </p>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-1 text-slate-800">
+            <label className="block text-xs font-medium text-slate-800 mb-1">
               Firmenname *
             </label>
             <input
               type="text"
-              className={inputClass}
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]"
+              placeholder="z.B. Klinikverbund Rhein-Main"
+              required
             />
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-800 mb-1">
+                Website
+              </label>
+              <input
+                type="url"
+                value={companyWebsite}
+                onChange={(e) => setCompanyWebsite(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]"
+                placeholder="https://www.firma.de"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-800 mb-1">
+                Branche
+              </label>
+              <input
+                type="text"
+                value={industry}
+                onChange={(e) => setIndustry(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]"
+                placeholder="z.B. Gesundheitswesen"
+              />
+            </div>
+          </div>
+
           <div>
-            <label className="block text-sm font-medium mb-1 text-slate-800">
-              Ansprechpartner (optional)
+            <label className="block text-xs font-medium text-slate-800 mb-1">
+              Ansprechpartner/in
             </label>
             <input
               type="text"
-              className={inputClass}
               value={contactName}
               onChange={(e) => setContactName(e.target.value)}
-              placeholder="z. B. HR Manager"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]"
+              placeholder="z.B. HR Manager/in"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1 text-slate-800">
-              Land (optional)
-            </label>
-            <input
-              type="text"
-              className={inputClass}
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              placeholder="z. B. Deutschland"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 text-slate-800">
+            <label className="block text-xs font-medium text-slate-800 mb-1">
               E-Mail *
             </label>
             <input
               type="email"
-              className={inputClass}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]"
+              placeholder="name@example.com"
+              required
             />
           </div>
 
-          <div className="grid md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-800">
+              <label className="block text-xs font-medium text-slate-800 mb-1">
                 Passwort *
               </label>
               <input
                 type="password"
-                className={inputClass}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]"
+                placeholder="Mind. 8 Zeichen"
+                required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1 text-slate-800">
-                Passwort bestätigen *
+              <label className="block text-xs font-medium text-slate-800 mb-1">
+                Passwort wiederholen *
               </label>
               <input
                 type="password"
-                className={inputClass}
                 value={passwordConfirmation}
                 onChange={(e) => setPasswordConfirmation(e.target.value)}
-                autoComplete="new-password"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]"
+                placeholder="Noch einmal eingeben"
+                required
               />
             </div>
           </div>
@@ -217,20 +211,31 @@ export default function RegisterEmployerPage() {
           <button
             type="submit"
             disabled={loading}
-            className={primaryButtonClass}
+            className="w-full rounded-lg bg-sky-800 text-white text-sm font-medium py-2 mt-2 hover:bg-sky-900 disabled:opacity-50"
           >
-            {loading ? "Registrierung läuft..." : "Arbeitgeber registrieren"}
+            {loading ? "Registrierung läuft..." : "Registrieren"}
           </button>
         </form>
 
-        <div className="mt-6 text-[11px] text-slate-500 text-center space-y-2">
-          <p>Bereits ein Account?</p>
-          <button
-            onClick={gotoLogin}
-            className="text-sky-800 hover:underline font-medium"
-          >
-            Zum Login
-          </button>
+        <div className="mt-4 text-center text-[11px] text-slate-600 space-y-1">
+          <p>
+            Bereits einen Account?{" "}
+            <a
+              href="/login"
+              className="text-sky-700 hover:underline"
+            >
+              Zum Login
+            </a>
+          </p>
+          <p>
+            Kandidat?{" "}
+            <a
+              href="/register/candidate"
+              className="text-sky-700 hover:underline"
+            >
+              Kandidat registrieren
+            </a>
+          </p>
         </div>
       </div>
     </div>
