@@ -33,7 +33,27 @@ class CandidateProfile extends Model
 
     public function candidateProfile()
     {
-    return $this->hasOne(CandidateProfile::class, 'user_id');
+        return $this->hasOne(CandidateProfile::class, 'user_id');
+    }
+
+    public function experiences()
+    {
+        return $this->hasMany(CandidateExperience::class);
+    }
+
+    public function educations()
+    {
+        return $this->hasMany(CandidateEducation::class);
+    }
+
+    public function skills()
+    {
+        return $this->hasMany(CandidateSkill::class);
+    }
+
+    public function languages()
+    {
+        return $this->hasMany(CandidateLanguage::class);
     }
 }
 
