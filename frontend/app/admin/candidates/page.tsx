@@ -31,28 +31,29 @@ export default function AdminCandidatesPage() {
   const [error, setError] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<AdminCandidate[]>([]);
   const [savingStatusId, setSavingStatusId] = useState<number | null>(null);
-  const [token, setToken] = useState<string | null>(null);
 
-  // Token aus localStorage laden
+  /**
+   * Auth-Check + Kandidatenliste in EINEM Effekt
+   * Verhindert das "Token ist noch null → redirect auf /login"-Problem.
+   */
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const t = localStorage.getItem("prolinked_token");
-      setToken(t);
-    }
-  }, []);
-
-  // Admin-Check + Kandidatenliste laden
-  useEffect(() => {
-    if (!token) {
-      setAuthChecking(false);
-      router.push("/login");
-      return;
-    }
-
-    const checkAdminAndLoad = async () => {
+    const run = async () => {
       try {
         setAuthChecking(true);
         setError(null);
+
+        if (typeof window === "undefined") {
+          return;
+        }
+
+        const token = localStorage.getItem("prolinked_token");
+
+        // Kein Token → direkt zum Login
+        if (!token) {
+          setAuthChecking(false);
+          router.push("/login");
+          return;
+        }
 
         // 1) /auth/me prüfen
         const meRes = await fetch(`${API_BASE_URL}/auth/me`, {
@@ -96,8 +97,8 @@ export default function AdminCandidatesPage() {
       }
     };
 
-    checkAdminAndLoad();
-  }, [token, router]);
+    run();
+  }, [router]);
 
   const handleLogout = () => {
     if (typeof window !== "undefined") {
@@ -131,8 +132,12 @@ export default function AdminCandidatesPage() {
     const candidate = candidates.find((c) => c.id === candidateId);
     if (!candidate) return;
 
+    if (typeof window === "undefined") return;
+
+    const token = localStorage.getItem("prolinked_token");
     if (!token) {
       alert("Nicht eingeloggt.");
+      router.push("/login");
       return;
     }
 
@@ -174,6 +179,7 @@ export default function AdminCandidatesPage() {
     }
   };
 
+  // Während Auth-Check
   if (authChecking) {
     return (
       <div className="p-6">
@@ -184,6 +190,7 @@ export default function AdminCandidatesPage() {
     );
   }
 
+  // Fehlerfall (z.B. kein Admin)
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50">
