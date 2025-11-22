@@ -190,4 +190,23 @@ export default function DocumentManager() {
                     <p className="text-sm font-medium text-slate-900">
                       {doc.file_name}
                     </p>
-                    <p className
+                    <p className="text-xs text-slate-500">
+                      Upload: {new Date(doc.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleDelete(doc.id)}
+                  className="text-red-600 hover:text-red-800 p-1 rounded focus:ring-2 focus:ring-red-300"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
