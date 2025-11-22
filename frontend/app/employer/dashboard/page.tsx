@@ -212,7 +212,7 @@ export default function EmployerDashboardPage() {
 
   // Ladezustand
   if (loadingUser && !user && !userError) {
-    return <div className="p-6">Lade Benutzerdaten...</div>;
+    return <div className="p-6 text-slate-900">Lade Benutzerdaten...</div>;
   }
 
   if (userError) {
@@ -246,7 +246,7 @@ export default function EmployerDashboardPage() {
           </p>
           <button
             onClick={() => router.push("/login")}
-            className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 text-sm"
+            className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 text-sm text-slate-900"
           >
             Zurück zum Login
           </button>
@@ -275,13 +275,13 @@ export default function EmployerDashboardPage() {
           <nav className="flex items-center gap-3 text-sm">
             <button
               onClick={() => router.push("/employer/dashboard")}
-              className="px-2 py-1 rounded bg-sky-800"
+              className="px-2 py-1 rounded bg-sky-800 text-sky-50 hover:bg-sky-900"
             >
               Dashboard
             </button>
             <button
               onClick={() => router.push("/jobs")}
-              className="px-2 py-1 rounded hover:bg-sky-800"
+              className="px-2 py-1 rounded hover:bg-sky-800 text-sky-50/90"
             >
               Öffentliche Jobs
             </button>
@@ -302,7 +302,7 @@ export default function EmployerDashboardPage() {
           <h1 className="text-xl font-semibold text-slate-900">
             Willkommen, {user?.name ?? "Arbeitgeber"}
           </h1>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-700">
             Verwalten Sie Ihre Stellenanzeigen und behalten Sie den Überblick
             über Ihre Recruiting-Aktivitäten.
           </p>
@@ -328,7 +328,7 @@ export default function EmployerDashboardPage() {
               <p className="text-[11px] uppercase text-slate-500">
                 Bewerbungen (Platzhalter)
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-600">
                 Detaillierte Bewerbungsstatistiken folgen in Phase 3.
               </p>
             </div>
@@ -344,7 +344,7 @@ export default function EmployerDashboardPage() {
             <button
               type="button"
               onClick={() => setShowJobForm((prev) => !prev)}
-              className="text-xs px-3 py-1 rounded border border-slate-300 bg-white hover:bg-slate-50"
+              className="text-xs px-3 py-1 rounded border border-slate-400 bg-slate-100 text-slate-900 hover:bg-slate-200"
             >
               {showJobForm ? "Formular ausblenden" : "Formular anzeigen"}
             </button>
@@ -366,7 +366,7 @@ export default function EmployerDashboardPage() {
               <form onSubmit={handleJobSubmit} className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-medium text-slate-800 mb-1">
                       Stellentitel *
                     </label>
                     <input
@@ -379,7 +379,7 @@ export default function EmployerDashboardPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-medium text-slate-800 mb-1">
                       Standort
                     </label>
                     <input
@@ -394,7 +394,7 @@ export default function EmployerDashboardPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-medium text-slate-800 mb-1">
                       Anstellungsart
                     </label>
                     <select
@@ -414,7 +414,7 @@ export default function EmployerDashboardPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                    <label className="block text-xs font-medium text-slate-800 mb-1">
                       Sprachanforderungen
                     </label>
                     <input
@@ -428,7 +428,7 @@ export default function EmployerDashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-800 mb-1">
                     Beschreibung *
                   </label>
                   <textarea
@@ -442,7 +442,7 @@ export default function EmployerDashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <label className="block text-xs font-medium text-slate-800 mb-1">
                     Anforderungen / Profil
                   </label>
                   <textarea
@@ -464,7 +464,7 @@ export default function EmployerDashboardPage() {
                   />
                   <label
                     htmlFor="jobIsActive"
-                    className="text-xs text-slate-700"
+                    className="text-xs text-slate-800"
                   >
                     Stelle ist aktiv und sichtbar
                   </label>
@@ -501,7 +501,7 @@ export default function EmployerDashboardPage() {
           )}
 
           {!loadingJobs && jobs.length === 0 && !jobsError && (
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-700">
               Sie haben derzeit noch keine Stellen angelegt.
             </p>
           )}
@@ -510,7 +510,7 @@ export default function EmployerDashboardPage() {
             <div className="overflow-x-auto border border-slate-200 rounded-lg">
               <table className="min-w-full text-xs md:text-sm bg-white">
                 <thead>
-                  <tr className="text-left text-slate-500 border-b border-slate-200">
+                  <tr className="text-left text-slate-600 border-b border-slate-200">
                     <th className="py-2 px-3">Titel</th>
                     <th className="py-2 px-3">Standort</th>
                     <th className="py-2 px-3">Anstellungsart</th>
@@ -527,10 +527,10 @@ export default function EmployerDashboardPage() {
                       <td className="py-2 px-3 text-slate-900">
                         {job.title}
                       </td>
-                      <td className="py-2 px-3 text-slate-700">
+                      <td className="py-2 px-3 text-slate-800">
                         {job.location || "–"}
                       </td>
-                      <td className="py-2 px-3 text-slate-700">
+                      <td className="py-2 px-3 text-slate-800">
                         {job.employment_type || "–"}
                       </td>
                       <td className="py-2 px-3">
@@ -538,15 +538,15 @@ export default function EmployerDashboardPage() {
                           className={
                             "inline-flex items-center px-2 py-1 rounded-full text-[11px] border " +
                             (job.is_active
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : "bg-slate-50 text-slate-600 border-slate-200")
+                              ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                              : "bg-slate-50 text-slate-700 border-slate-300")
                           }
                         >
                           <span className="w-1.5 h-1.5 rounded-full bg-current mr-1" />
                           {job.is_active ? "Aktiv" : "Inaktiv"}
                         </span>
                       </td>
-                      <td className="py-2 px-3 text-slate-700 whitespace-nowrap">
+                      <td className="py-2 px-3 text-slate-800 whitespace-nowrap">
                         {job.created_at
                           ? new Date(job.created_at).toLocaleString()
                           : "–"}
