@@ -58,7 +58,7 @@ export default function LoginPage() {
         localStorage.setItem("prolinked_role", data.user.role);
       }
 
-      // Redirect nach Rolle
+      // 🔁 Rolle auswerten und weiterleiten
       if (data.user.role === "candidate") {
         router.push("/candidate/dashboard");
       } else if (data.user.role === "employer") {
@@ -66,7 +66,7 @@ export default function LoginPage() {
       } else if (data.user.role === "admin") {
         router.push("/admin/candidates");
       } else {
-        // Fallback
+        // Fallback – falls irgendwann andere Rollen kommen
         router.push("/");
       }
     } catch (err: any) {
@@ -78,8 +78,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="w-full max-w-md bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-900 to-sky-950">
+      <div className="w-full max-w-md bg-white/95 border border-slate-700/40 rounded-2xl shadow-xl p-6">
         <div className="mb-4 text-center">
           <h1 className="text-xl font-semibold text-slate-900">
             PROLINKED Login
@@ -101,14 +101,14 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">
+            <label className="block text-xs font-medium text-slate-1000 mb-1">
               E-Mail
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]"
               placeholder="name@example.com"
               required
             />
@@ -122,7 +122,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5BE1E6] focus:border-[#5BE1E6]"
               placeholder="••••••••"
               required
             />
@@ -137,19 +137,19 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-4 text-center text-[11px] text-slate-600 space-y-1">
+        <div className="mt-4 text-center text-[11px] text-slate-200 space-y-1">
           <p>
             Noch kein Account?{" "}
             <a
               href="/register/candidate"
-              className="text-sky-700 hover:underline"
+              className="text-[#5BE1E6] hover:underline"
             >
               Kandidat registrieren
             </a>{" "}
             ·{" "}
             <a
               href="/register/employer"
-              className="text-sky-700 hover:underline"
+              className="text-[#5BE1E6] hover:underline"
             >
               Arbeitgeber registrieren
             </a>
