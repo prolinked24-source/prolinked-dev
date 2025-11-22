@@ -7,10 +7,14 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
 
 interface DocumentItem {
   id: number;
-  file_name: string;
-  file_path: string;
+  user_id: number;
+  type: "cv" | "certificate" | "reference" | "other" | string;
+  original_name: string;
+  path: string;
+  mime_type: string;
+  size: number;
   created_at: string;
-  type?: string | null; // optional, falls vom Backend geliefert
+  updated_at: string;
 }
 
 export default function DocumentManager() {
@@ -27,15 +31,20 @@ export default function DocumentManager() {
     const fetchDocs = async () => {
       try {
         const token = localStorage.getItem("prolinked_token");
-        if (!token) return;
+        if (!token) {
+          setLoading(false);
+          return;
+        }
 
         const res = await fetch(`${API_BASE_URL}/candidate/documents`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (!res.ok) throw new Error("Fehler beim Laden der Dokumente.");
+        if (!res.ok) {
+          throw new Error("Fehler beim Laden der Dokumente.");
+        }
 
-        const data = await res.json();
+        const data = (await res.json()) as DocumentItem[];
         setDocuments(data);
       } catch (err) {
         console.error(err);
@@ -74,12 +83,9 @@ export default function DocumentManager() {
       }
 
       const formData = new FormData();
-
-      // 🔴 WICHTIG: Diese Feldnamen müssen zu deinem Laravel-Controller passen!
-      // In DocumentController::upload sollte z.B. stehen:
-      // $request->validate(['file' => 'required|file', 'type' => 'nullable|string']);
-      formData.append("file", selectedFile);   // <– wenn Backend "document" erwartet: auf "document" ändern
-      formData.append("type", documentType);   // <– wenn Backend "document_type" erwartet: anpassen
+      // EXAKT wie im DocumentController::upload
+      formData.append("file", selectedFile);
+      formData.append("type", documentType);
 
       const res = await fetch(`${API_BASE_URL}/candidate/documents`, {
         method: "POST",
@@ -93,15 +99,20 @@ export default function DocumentManager() {
           const body = await res.json();
           if (body?.message) msg = body.message;
         } catch {
-          // ignore JSON parse
+          // ignore
         }
         throw new Error(msg);
       }
 
-      const newDoc = await res.json();
+      const body = await res.json() as {
+        message: string;
+        document: DocumentItem;
+      };
+
+      const newDoc = body.document;
       setDocuments((prev) => [...prev, newDoc]);
       setSelectedFile(null);
-      setSuccess("Dokument erfolgreich hochgeladen.");
+      setSuccess(body.message || "Dokument erfolgreich hochgeladen.");
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Upload fehlgeschlagen. Bitte erneut versuchen.");
@@ -127,7 +138,14 @@ export default function DocumentManager() {
       });
 
       if (!res.ok) {
-        throw new Error("Löschen fehlgeschlagen.");
+        let msg = "Löschen fehlgeschlagen.";
+        try {
+          const body = await res.json();
+          if (body?.message) msg = body.message;
+        } catch {
+          // ignore
+        }
+        throw new Error(msg);
       }
 
       setDocuments((prev) => prev.filter((doc) => doc.id !== id));
@@ -135,6 +153,21 @@ export default function DocumentManager() {
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Löschen fehlgeschlagen.");
+    }
+  };
+
+  const renderTypeLabel = (type: string) => {
+    switch (type) {
+      case "cv":
+        return "CV";
+      case "certificate":
+        return "Zertifikat";
+      case "reference":
+        return "Referenz";
+      case "other":
+        return "Sonstiges";
+      default:
+        return type;
     }
   };
 
@@ -153,13 +186,13 @@ export default function DocumentManager() {
       )}
 
       {/* Upload-Box */}
-      <div className="bg-white rounded-lg shadow border border-slate-200 p-5">
+      <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-5">
         <h3 className="text-slate-900 font-semibold mb-2">
           Dokument hochladen
         </h3>
         <p className="text-xs text-slate-600 mb-3">
           Wähle den Dokumententyp und lade passende Unterlagen hoch. <br />
-          Erlaubte Formate: PDF, JPG, PNG, DOC, DOCX
+          Erlaubte Formate: PDF, JPG, PNG, DOC, DOCX (max. 10MB)
         </p>
 
         {/* Typ-Auswahl */}
@@ -218,7 +251,7 @@ export default function DocumentManager() {
       </div>
 
       {/* Dokumentliste */}
-      <div className="bg-white rounded-lg shadow border border-slate-200">
+      <div className="bg-white rounded-lg shadow-sm border border-slate-200">
         <h3 className="text-slate-900 font-semibold p-5 pb-3">
           Meine Dokumente
         </h3>
@@ -242,14 +275,12 @@ export default function DocumentManager() {
                   <FileText className="w-5 h-5 text-slate-500" />
                   <div>
                     <p className="text-sm font-medium text-slate-900">
-                      {doc.file_name}
+                      {doc.original_name}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {doc.type && (
-                        <span className="mr-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700 border border-slate-200 uppercase">
-                          {doc.type}
-                        </span>
-                      )}
+                      <span className="inline-flex items-center px-2 py-0.5 mr-2 rounded-full text-[10px] bg-slate-100 text-slate-700 border border-slate-200 uppercase">
+                        {renderTypeLabel(doc.type)}
+                      </span>
                       Upload: {new Date(doc.created_at).toLocaleString()}
                     </p>
                   </div>
