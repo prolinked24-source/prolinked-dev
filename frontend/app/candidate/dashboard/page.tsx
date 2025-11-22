@@ -7,10 +7,10 @@ import DocumentManager from "../../components/DocumentManager";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL as string;
 
 interface CandidateProfile {
-  first_name?: string;
-  last_name?: string;
-  country_of_origin?: string;
-  target_country?: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  country_of_origin?: string | null;
+  target_country?: string | null;
   status?: "new" | "reviewed" | "eligible" | string;
 }
 
@@ -29,9 +29,9 @@ interface Application {
   job: {
     id: number;
     title: string;
-    location?: string;
+    location?: string | null;
     employer?: {
-      company_name?: string;
+      company_name?: string | null;
     };
   };
 }
@@ -46,70 +46,72 @@ export default function CandidateDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [appsError, setAppsError] = useState<string | null>(null);
 
-  // Benutzer & Bewerbungen laden
   useEffect(() => {
-    const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("prolinked_token")
-        : null;
-
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
-    const fetchMe = async () => {
+    const run = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/auth/me`, {
+        if (typeof window === "undefined") return;
+
+        const token = localStorage.getItem("prolinked_token");
+        if (!token) {
+          setLoading(false);
+          router.push("/login");
+          return;
+        }
+
+        // 1) Benutzer laden
+        setLoading(true);
+        const meRes = await fetch(`${API_BASE_URL}/auth/me`, {
           headers: {
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
           },
         });
 
-        if (!res.ok) {
+        if (!meRes.ok) {
           throw new Error("Fehler beim Laden des Benutzers.");
         }
 
-        const data = (await res.json()) as User;
-        setUser(data);
+        const me = (await meRes.json()) as User;
+        setUser(me);
 
-        if (data.role !== "candidate") {
+        if ((me.role || "").toLowerCase() !== "candidate") {
           setError("Dieses Dashboard ist nur für Kandidaten.");
+          setLoadingApps(false);
+          return;
         }
-      } catch (err: any) {
-        console.error(err);
-        setError(err.message || "Fehler beim Laden des Benutzers.");
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    const fetchApplications = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/candidate/applications`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
-        });
+        // 2) Bewerbungen laden
+        setLoadingApps(true);
+        const appsRes = await fetch(
+          `${API_BASE_URL}/candidate/applications`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/json",
+            },
+          }
+        );
 
-        if (!res.ok) {
+        if (!appsRes.ok) {
           throw new Error("Fehler beim Laden der Bewerbungen.");
         }
 
-        const data = (await res.json()) as Application[];
-        setApplications(data);
+        const apps = (await appsRes.json()) as Application[];
+        setApplications(apps);
       } catch (err: any) {
         console.error(err);
-        setAppsError(err.message || "Fehler beim Laden der Bewerbungen.");
+        if (!user) {
+          setError(err.message || "Fehler beim Laden der Benutzerdaten.");
+        } else {
+          setAppsError(err.message || "Fehler beim Laden der Bewerbungen.");
+        }
       } finally {
+        setLoading(false);
         setLoadingApps(false);
       }
     };
 
-    fetchMe();
-    fetchApplications();
+    run();
   }, [router]);
 
   const handleLogout = () => {
@@ -120,19 +122,23 @@ export default function CandidateDashboardPage() {
     router.push("/login");
   };
 
-  if (loading) {
-    return <div className="p-6">Lade Benutzerdaten...</div>;
+  if (loading && !user && !error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <p className="text-sm text-slate-800">Lade Benutzerdaten...</p>
+      </div>
+    );
   }
 
-  if (!user) {
+  if (!user && !loading && !error) {
     return (
       <div className="p-6">
-        <p className="mb-3">
+        <p className="mb-3 text-slate-900">
           Kein Benutzer geladen. Bitte erneut einloggen.
         </p>
         <button
           onClick={handleLogout}
-          className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 text-sm"
+          className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 text-sm text-slate-900"
         >
           Zurück zum Login
         </button>
@@ -171,7 +177,7 @@ export default function CandidateDashboardPage() {
           </p>
           <button
             onClick={handleLogout}
-            className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 text-sm"
+            className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 text-sm text-slate-900"
           >
             Zurück zum Login
           </button>
@@ -180,22 +186,11 @@ export default function CandidateDashboardPage() {
     );
   }
 
-  const profile = user.candidate_profile || {};
+  const profile = user?.candidate_profile || {};
   const profileComplete = Boolean(
     (profile.first_name && profile.first_name.trim() !== "") ||
       (profile.last_name && profile.last_name.trim() !== "")
   );
-  const hasApplications = applications.length > 0;
-
-  // Stepper-Klassen
-  const stepBase =
-    "flex-1 rounded-lg border px-3 py-2 flex items-center gap-2 text-xs md:text-sm";
-  const stepDone = "border-emerald-400 bg-emerald-50 text-emerald-900";
-  const stepCurrent = "border-sky-400 bg-sky-50 text-sky-900";
-  const stepUpcoming = "border-slate-200 bg-slate-50 text-slate-600";
-
-  const circleBase =
-    "flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-semibold";
 
   const statusLabel =
     profile.status === "eligible"
@@ -209,10 +204,25 @@ export default function CandidateDashboardPage() {
       ? "text-emerald-700 bg-emerald-50 border-emerald-200"
       : profile.status === "reviewed"
       ? "text-sky-700 bg-sky-50 border-sky-200"
-      : "text-slate-600 bg-slate-50 border-slate-200";
+      : "text-slate-700 bg-slate-50 border-slate-200";
+
+  // Stepper-Klassen
+  const stepBase =
+    "flex-1 rounded-lg border px-3 py-2 flex items-center gap-2 text-xs md:text-sm";
+  const stepDone = "border-emerald-400 bg-emerald-50 text-emerald-900";
+  const stepCurrent = "border-sky-400 bg-sky-50 text-sky-900";
+  const stepUpcoming = "border-slate-200 bg-slate-50 text-slate-600";
+
+  const circleBase =
+    "flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-semibold";
+
+  const hasApplications = applications.length > 0;
+  const isReviewedOrEligible =
+    profile.status === "reviewed" || profile.status === "eligible";
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Header */}
       <header className="bg-sky-900 text-sky-50 shadow">
         <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-3">
           <div>
@@ -230,13 +240,13 @@ export default function CandidateDashboardPage() {
           <nav className="flex items-center gap-3 text-sm">
             <button
               onClick={() => router.push("/candidate/dashboard")}
-              className="px-2 py-1 rounded bg-sky-800"
+              className="px-2 py-1 rounded bg-sky-800 text-sky-50 hover:bg-sky-900"
             >
               Dashboard
             </button>
             <button
               onClick={() => router.push("/jobs")}
-              className="px-2 py-1 rounded hover:bg-sky-800"
+              className="px-2 py-1 rounded hover:bg-sky-800 text-sky-50/90"
             >
               Jobs
             </button>
@@ -250,12 +260,14 @@ export default function CandidateDashboardPage() {
         </div>
       </header>
 
+      {/* Main */}
       <main className="p-6 max-w-5xl mx-auto space-y-6">
         {/* Stepper – Vermittlungsstatus */}
         <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
           <h2 className="text-sm font-semibold mb-3 text-slate-900">
             Mein Vermittlungsstatus
           </h2>
+
           <div className="flex flex-col md:flex-row md:items-stretch gap-3 mb-3">
             {/* Schritt 1: Profil */}
             <div
@@ -279,24 +291,30 @@ export default function CandidateDashboardPage() {
               <div>
                 <p className="font-semibold">Profil anlegen</p>
                 <p className="text-[11px] text-slate-600">
-                  Basisdaten (Name, Länder) hinterlegt.
+                  Basisdaten (Name, Länder) hinterlegen.
                 </p>
               </div>
             </div>
 
-            {/* Schritt 2: CV (jetzt allgemein „Unterlagen“) */}
+            {/* Schritt 2: Dokumente */}
             <div
               className={
                 stepBase +
                 " " +
-                (profileComplete ? stepCurrent : stepUpcoming)
+                (profileComplete && isReviewedOrEligible
+                  ? stepDone
+                  : profileComplete
+                  ? stepCurrent
+                  : stepUpcoming)
               }
             >
               <div
                 className={
                   circleBase +
                   " " +
-                  (profileComplete
+                  (profileComplete && isReviewedOrEligible
+                    ? "bg-emerald-500 text-white"
+                    : profileComplete
                     ? "bg-sky-600 text-white"
                     : "bg-slate-300 text-slate-700")
                 }
@@ -304,27 +322,29 @@ export default function CandidateDashboardPage() {
                 2
               </div>
               <div>
-                <p className="font-semibold">Unterlagen hochladen</p>
+                <p className="font-semibold">Dokumente hochladen</p>
                 <p className="text-[11px] text-slate-600">
-                  CV, Zertifikate & Referenzen im Profil hinterlegen.
+                  CV, Zeugnisse & Unterlagen im Dokumenten-Center.
                 </p>
               </div>
             </div>
 
-            {/* Schritt 3: Jobs */}
+            {/* Schritt 3: Jobs durchsuchen */}
             <div
               className={
                 stepBase +
                 " " +
-                (profileComplete ? stepUpcoming : stepUpcoming)
+                (profileComplete && isReviewedOrEligible
+                  ? stepCurrent
+                  : stepUpcoming)
               }
             >
               <div
                 className={
                   circleBase +
                   " " +
-                  (profileComplete
-                    ? "bg-slate-300 text-slate-700"
+                  (profileComplete && isReviewedOrEligible
+                    ? "bg-sky-600 text-white"
                     : "bg-slate-300 text-slate-700")
                 }
               >
@@ -397,8 +417,22 @@ export default function CandidateDashboardPage() {
           </p>
         </section>
 
-        {/* Dokumentenverwaltung */}
-        <DocumentManager />
+        {/* Dokumenten-Center */}
+        <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-semibold text-slate-900">
+              Dokumenten-Center
+            </h2>
+          </div>
+          <p className="text-xs text-slate-700 mb-3">
+            Lade hier deine{" "}
+            <span className="font-semibold">CVs, Zeugnisse, Zertifikate</span>{" "}
+            und andere relevante Unterlagen hoch. Diese Dokumente werden für
+            die interne Prüfung und spätere Vermittlung genutzt.
+          </p>
+
+          <DocumentManager />
+        </section>
 
         {/* Bewerbungen */}
         <section className="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
@@ -413,33 +447,39 @@ export default function CandidateDashboardPage() {
           )}
 
           {loadingApps && (
-            <p className="text-sm">Bewerbungen werden geladen...</p>
-          )}
-
-          {!loadingApps && applications.length === 0 && !appsError && (
-            <p className="text-sm text-slate-600">
-              Noch keine Bewerbungen vorhanden.
+            <p className="text-sm text-slate-700">
+              Bewerbungen werden geladen...
             </p>
           )}
 
-          <ul className="divide-y divide-slate-200 mt-2">
-            {applications.map((app) => (
-              <li key={app.id} className="py-2 text-sm">
-                <div className="font-medium text-slate-900">
-                  {app.job?.title}
-                </div>
-                <div className="text-slate-600">
-                  {app.job?.employer?.company_name ||
-                    "Unbekannter Arbeitgeber"}{" "}
-                  – {app.job?.location || "Ort n/a"}
-                </div>
-                <div className="text-slate-500 text-xs">
-                  Status: {app.status} – Erstellt am:{" "}
-                  {new Date(app.created_at).toLocaleString()}
-                </div>
-              </li>
-            ))}
-          </ul>
+          {!loadingApps &&
+            applications.length === 0 &&
+            !appsError && (
+              <p className="text-sm text-slate-700">
+                Noch keine Bewerbungen vorhanden.
+              </p>
+            )}
+
+          {!loadingApps && applications.length > 0 && (
+            <ul className="divide-y divide-slate-200 mt-2">
+              {applications.map((app) => (
+                <li key={app.id} className="py-2 text-sm">
+                  <div className="font-medium text-slate-900">
+                    {app.job?.title}
+                  </div>
+                  <div className="text-slate-700">
+                    {app.job?.employer?.company_name ||
+                      "Unbekannter Arbeitgeber"}{" "}
+                    – {app.job?.location || "Ort n/a"}
+                  </div>
+                  <div className="text-slate-500 text-xs">
+                    Status: {app.status} – Erstellt am:{" "}
+                    {new Date(app.created_at).toLocaleString()}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       </main>
     </div>
