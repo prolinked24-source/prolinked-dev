@@ -68,7 +68,7 @@ export default function AdminCandidatesPage() {
 
         const me = await meRes.json();
 
-        if (me.role !== "admin") {
+        if ((me.role || "").toLowerCase() !== "admin") {
           throw new Error("Nur Admins haben Zugriff auf diese Seite.");
         }
 
