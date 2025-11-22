@@ -228,7 +228,7 @@ export default function DocumentManager() {
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-sky-900 hover:bg-sky-800 focus:ring-2 focus:ring-[#5BE1E6]"
         >
           <Upload className="w-4 h-4" />
-          Datei hochladen
+          Datei Hochladen
         </button>
 
         {/* Fortschrittsbalken */}
