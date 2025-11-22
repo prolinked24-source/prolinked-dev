@@ -6,5 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class CandidateSkill extends Model
 {
-    //
+    protected $fillable = [
+        'candidate_profile_id',
+        'name',
+        'level',
+    ];
+
+    public function profile()
+    {
+        return $this->belongsTo(CandidateProfile::class, 'candidate_profile_id');
+    }
 }
